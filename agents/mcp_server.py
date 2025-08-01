@@ -22,8 +22,48 @@ WEATHER_CODES = {
 }
 
 # ── Instantiate the MCP server ─────────────────────────────────────────────
+mcp = FastMCP("WeatherServer")
 
 # ── Register tools ─────────────────────────────────────────────────────────
+@mcp.tool
+def get_weather(lat: float, lon: float) -> dict:
+    """
+    Current conditions via Open-Meteo.
+
+        {
+            "temperature": °C,
+            "code":        int,   # Open-Meteo weathercode
+            "conditions":  str    # human-readable description
+        }
+    """
+    url = (
+        "https://api.open-meteo.com/v1/forecast"
+        f"?latitude={lat}&longitude={lon}&current_weather=true"
+    )
+    resp = requests.get(url, timeout=15)
+    resp.raise_for_status()
+    cw   = resp.json()["current_weather"]
+
+    code = cw["weathercode"]
+    return {
+        "temperature": cw["temperature"],
+        "code":        code,
+        "conditions":  WEATHER_CODES.get(code, "Unknown"),
+    }
+
+
+@mcp.tool
+def convert_c_to_f(c: float) -> float:
+    """Convert Celsius to Fahrenheit."""
+    return c * 9 / 5 + 32
 
 
 # ── Run the server ─────────────────────────────────────────────────────────
+if __name__ == "__main__":
+    # JSON-RPC on /mcp/  (streaming also auto-published on /streamable-http)
+    mcp.run(
+        transport="http",
+        host="127.0.0.1",
+        port=8000,
+        path="/mcp/",
+    )

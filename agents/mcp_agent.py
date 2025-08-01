@@ -14,6 +14,23 @@ from fastmcp.exceptions import ToolError
 from langchain_ollama import ChatOllama  # pip install langchain-ollama
 
 # ── 1. System prompt ───────────────────────────────────────────────
+SYSTEM = textwrap.dedent("""
+You are an agent with two tools:
+
+get_weather(lat:float, lon:float)
+    → { "temperature": float, "code": int, "conditions": str }
+
+convert_c_to_f(c:float)
+    → float
+
+When you plan, emit exactly three lines:
+
+Thought: <what you plan>
+Action: <tool name>
+Args: {"lat":X,"lon":Y}   or   {"c":Z}
+
+Do NOT output anything else.
+""").strip()
 
 # ── 2. Regex for extracting the JSON args ───────────────────────────
 ARGS_RE = re.compile(r"Args:\s*(\{.*?\})(?:\s|$)", re.S)
@@ -33,7 +50,13 @@ def unwrap(x):
 
 # ── 4. Single-run TAO helper with error handling ──────────────────────
 async def run(question: str):
+    llm = ChatOllama(model="llama3.2", temperature=0.0)
 
+    async with Client("http://127.0.0.1:8000/mcp/") as mcp:
+        messages = [
+            {"role": "system", "content": SYSTEM},
+            {"role": "user",   "content": question},
+        ]
 
         print("\n--- Thought → Action → Observation → Final ---\n")
 
@@ -45,6 +68,7 @@ async def run(question: str):
         args1 = json.loads(ARGS_RE.search(plan1).group(1))
 
         try:
+            raw1 = await mcp.call_tool("get_weather", args1)
         except ToolError as e:
             print(f"⚠️  Error calling get_weather: {e}\n")
             return
@@ -66,6 +90,7 @@ async def run(question: str):
         print(plan2 + "\n")
 
         try:
+            raw2 = await mcp.call_tool("convert_c_to_f", {"c": temp_c})
         except ToolError as e:
             print(f"⚠️  Error calling convert_c_to_f: {e}\n")
             return

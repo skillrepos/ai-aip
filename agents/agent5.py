@@ -20,18 +20,79 @@ def book_flight(flight_number: str):
 
 # Define the AI agent 
 
+# Defines the AI agents
+
+booking_agent = Agent(
+    role="Airline Booking Assistant",
+    goal="Help users book flights efficiently.",
+    backstory="You are an expert airline booking assistant, providing the best booking options with clear information.",
+    verbose=True,
+    llm=ollama_llm,
+)
+
+# New agent for travel planning tasks
+travel_agent = Agent(
+    role="Travel Assistant",
+    goal="Assist in planning and organizing travel details.",
+    backstory="You are skilled at planning and organizing travel itineraries efficiently.",
+    verbose=True,
+    llm=ollama_llm,
+)
+
+# New agent for customer service tasks
+customer_service_agent = Agent(
+    role="Customer Service Representative",
+    goal="Provide excellent customer service by handling user requests and presenting options.",
+    backstory="You are skilled at providing customer support and ensuring user satisfaction.",
+    verbose=True,
+    llm=ollama_llm,
+)
+
+
 # Define the tasks with expected outputs
 # Create a task to extract travel details (source, destination, date) using the LLM.
+extract_travel_info_task = Task(
+    description=(
+        "Extract destination and date from {user_request}"
+       # "Return your result as a JSON object formatted as: "
+       # "{\"destination\": \"<destination>\", \"date\": \"<date>\"}."
+    ),
+    agent=customer_service_agent,
+    expected_output="A JSON object containing 'destination', and 'date'."
+)
 
 # Create a task to find suitable flights
+find_flights_task = Task(
+    description="Find available flights for the extracted destination and date.",
+    agent=travel_agent,
+    expected_output="A JSON list of available flights, including flight number, airline, departure time, and price."
+)
 
 # Create a task to present flight options 
+present_flights_task = Task(
+    description="Present flight options in a user-friendly format and ask the user to choose one. The list of flight should not be in JSON format and should have a number by each choice.",
+    agent=customer_service_agent,
+    expected_output="The selected flight number chosen by the user. If no response, just use 1."
+)
 
 # Create a task to book the flight
+book_flight_task = Task(
+    description="Book the selected flight and confirm booking. If more than one option, just use the first one.",
+    agent=booking_agent,
+    function=lambda details: book_flight(details["flight_number"]),
+    expected_output="A confirmation message with flight number and booking status.",
+    verbose=True
+)
 
 # Create the Crew
+crew = Crew(
+    agents=[booking_agent, customer_service_agent, travel_agent],
+    tasks=[extract_travel_info_task, find_flights_task, present_flights_task, book_flight_task],
+    process="sequential",
+    verbose=False
+)
 
 # Run the process with user input
-user_input = "I need a flight to New York on August 11, 2025."
+user_input = "I need a flight to Dubai on October 1, 2025."
 result = crew.kickoff(inputs={"user_request": user_input})
 print("Confirmation:", result)
