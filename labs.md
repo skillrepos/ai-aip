@@ -1,7 +1,7 @@
 # Implementing AI Agents in Python
 ## Using frameworks, MCP, and RAG for agentic AI
 ## Session labs 
-## Revision 1.11 - 09/03/25
+## Revision 1.12 - 09/03/25
 
 **Follow the startup instructions in the README.md file IF NOT ALREADY DONE!**
 
@@ -202,7 +202,7 @@ python curr_conv_agent.py
 Convert 100 USD to EUR
 ```
 
-6. The agent will run for a while and not return as the LLM loads and the processing happens. When it is finished with this run, you'll see output like the screenshot below. Notice that since we used the SmolAgents CodeAgent type, you can see the code it created and executed in the black box. **NOTE: This initial run will take several minutes!**
+6. The agent will run for a while and not return as the LLM loads and the processing happens. When it is finished with this run, you'll see output like the screenshot below. Notice that since we used the SmolAgents CodeAgent type, you can see the code it created and executed in the black box. **NOTE: This initial run will take several minutes!**  While you are waiting on it to complete, this is a good time to go back and look at the code in *curr_conv_agent.py* to understand more about it.
 
 ![Running agent](./images/aa69.png?raw=true "Running agent")   
 
@@ -260,8 +260,6 @@ convert 300
 - Repeats until user enters *exit*
 
 **What it demonstrates about the framework**
-- Integrates **LlamaIndex + ChromaDB** for Retrieval-Augmented Generation.
-- Uses **LangChain agents** to orchestrate tool use and LLM querying.
 - Shows a real-world use of RAG: mapping user input to structured, embedded knowledge.
 
 ---
@@ -503,7 +501,7 @@ Determine if a number is prime or not, but inject an error. Do not include a com
 
 ![Fix run](./images/aip9.png?raw=true "Fix run")
 
-9. Let's try one more change. We have a version of the code that has some extra functionality built-in to stream output, print system_messages, show when an agent is running, etc. It's in the "extra" directory, under "reflect_agent_verbose.py". Go ahead and run that and try a prompt with it. You can try the same prompt as in step 7 if you want. (You can type "exit" to stop the running one.)
+9. Let's try one more change. Use "*exit*" to stop the current agent. We have a version of the code that has some extra functionality built-in to stream output, print system_messages, show when an agent is running, etc. It's in the "extra" directory, under "reflect_agent_verbose.py". Go ahead and run that and try a prompt with it. You can try the same prompt as in step 7 if you want. (You can type "exit" to stop the running one.)
 
 ```
 python ../extra/reflect_agent_verbose.py
