@@ -32,6 +32,6 @@ def book_flight(flight_number: str):
 # Create the Crew
 
 # Run the process with user input
-user_input = "I need a flight to New York on August 11, 2025."
+user_input = "I need a flight to New York on December 11, 2025."
 result = crew.kickoff(inputs={"user_request": user_input})
 print("Confirmation:", result)
