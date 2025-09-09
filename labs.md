@@ -1,7 +1,7 @@
 # Implementing AI Agents in Python
 ## Using frameworks, MCP, and RAG for agentic AI
 ## Session labs 
-## Revision 1.13 - 09/08/25
+## Revision 1.14 - 09/08/25
 
 **Follow the startup instructions in the README.md file IF NOT ALREADY DONE!**
 
@@ -483,7 +483,7 @@ determine if a number is prime or not
 
 ![Simple task](./images/aip6.png?raw=true "Simple task")
 
-5. After this, you should see a "Generating Code..." message indicating the coding agent is generating code. Then you'll see the suggested code.
+5. After this, you should see a "Generating code..." message indicating the coding agent is generating code. Then you'll see the suggested code.
 
 ![Suggested code](./images/aip7.png?raw=true "Suggested code")
 
