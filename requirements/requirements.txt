@@ -17,8 +17,6 @@ uvicorn[standard]==0.29.0
 
 # ── RAG stack ──────────────────────────────────────────────────────────
 chromadb==1.0.13
-llama-index-core==0.12.44
-llama-index-llms-ollama==0.6.2
 
 # ── Utility libraries ───────────────────────────────────────────────────
 openai==1.75.0        # satisfies CrewAI & LlamaIndex (>=1.1,<1.76)
