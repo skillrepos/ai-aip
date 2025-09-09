@@ -1,7 +1,7 @@
 # Implementing AI Agents in Python
 ## Using frameworks, MCP, and RAG for agentic AI
 ## Session labs 
-## Revision 1.12 - 09/03/25
+## Revision 1.13 - 09/08/25
 
 **Follow the startup instructions in the README.md file IF NOT ALREADY DONE!**
 
@@ -60,7 +60,7 @@ code -d ../extra/lab1-code.txt agent1.py
 python agent1.py
 ```
 
-8. The agent will start running and will prompt for a location (or "exit" to finish). At the prompt, you can type in a location like "Paris, France" or "London" or "Raleigh" and hit *Enter*. After that you'll be able to see the Thought -> Action -> Observation loop in practice as each one is listed out. You'll also see the arguments being passed to the tools as they are called. Finally you should see a human-friendly message from the AI summarizing the weather forecast.
+8. The agent will start running and will prompt for a location (or "exit" to finish). At the prompt, you can type in a location like "Paris, France" or "London" or "Raleigh" and hit *Enter*. After that you'll be able to see the Thought -> Action -> Observation loop in practice as each one is listed out. You'll also see the arguments being passed to the tools as they are called. Finally you should see a human-friendly message from the AI summarizing the weather forecast.  (**NOTE: Since this is having to load up the model initially, it will take up to 3 minutes to return the first response.**)
 
 ![Agent run](./images/aa42.png?raw=true "Agent run") 
 
