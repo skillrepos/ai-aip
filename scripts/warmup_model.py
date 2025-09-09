@@ -1,173 +1,150 @@
 #!/usr/bin/env python3
-"""
-Model Warmup Script for AI Agents
-
-This script "warms up" the llama3.2 model by making a simple request to it,
-ensuring it's loaded in memory for faster subsequent agent responses.
-"""
-
-import asyncio
-import ollama
-import sys
+import argparse
+import concurrent.futures as cf
+import json
+import os
 import time
-from openai import OpenAI
+from pathlib import Path
 
-# ANSI color codes for output
-GREEN = "\033[92m"
-YELLOW = "\033[93m"
-RED = "\033[91m"
-CYAN = "\033[96m"
-RESET = "\033[0m"
-BOLD = "\033[1m"
+import requests
 
-def warmup_langchain_ollama():
-    """Warmup using langchain_ollama (for agents like agent1.py)"""
+def parse_args():
+    p = argparse.ArgumentParser(description="Ollama warmup utility")
+    p.add_argument("--host", default=os.getenv("OLLAMA_HOST", "http://127.0.0.1:11434"))
+    p.add_argument("--models", required=True, help="Comma-separated list of LLM models")
+    p.add_argument("--embed-model", default="", help="Embedding model name (optional)")
+    p.add_argument("--prompt-file", default="extra/curr_conv_agent.txt")
+    p.add_argument("--reps", type=int, default=3)
+    p.add_argument("--concurrency", type=int, default=2)
+    p.add_argument("--json", default="auto", choices=["auto", "true", "false"],
+                   help="Warm JSON formatter path: auto|true|false")
+    return p.parse_args()
+
+def read_prompt(prompt_file: str) -> str:
+    p = Path(prompt_file)
+    if not p.exists():
+        # Fallback generic warm prompt if file not present
+        return "You are a helpful assistant. Reply briefly to confirm readiness."
+    return p.read_text(encoding="utf-8")[:4000]  # keep it small for warmup
+
+def ping(host: str):
     try:
-        from langchain_ollama import ChatOllama
-        print(f"{CYAN}Warming up langchain_ollama interface...{RESET}")
-        
-        llm = ChatOllama(model="llama3.2", temperature=0.0)
-        start_time = time.time()
-        
-        # Simple warmup message
-        response = llm.invoke("Hello")
-        
-        end_time = time.time()
-        print(f"{GREEN}✓ langchain_ollama warmup completed in {end_time - start_time:.2f}s{RESET}")
+        r = requests.get(f"{host}/api/version", timeout=2)
+        r.raise_for_status()
         return True
-    except Exception as e:
-        print(f"{RED}✗ langchain_ollama warmup failed: {e}{RESET}")
+    except Exception:
         return False
 
-def warmup_openai_client():
-    """Warmup using OpenAI client (for agents like rag_agent.py)"""
-    try:
-        print(f"{CYAN}Warming up OpenAI client interface...{RESET}")
-        
-        client = OpenAI(
-            base_url='http://localhost:11434/v1',
-            api_key='ollama',
+def gen_once(host: str, model: str, prompt: str, json_mode: bool):
+    payload = {
+        "model": model,
+        "prompt": prompt,
+        "stream": False,
+        "options": {
+            # keep these small/fast; we just want the graph loaded and paths compiled
+            "temperature": 0.0,
+            "top_k": 1,
+            "num_predict": 32
+        },
+        "keep_alive": "10m"
+    }
+    if json_mode:
+        # Exercise the JSON formatting path Ollama provides
+        payload["format"] = "json"
+        # Nudge the model to actually emit valid JSON quickly
+        payload["prompt"] = (
+            prompt + "\n\n"
+            "Return a minimal valid JSON object summarizing your intent, e.g. "
+            '{"status":"ready"}'
         )
-        
-        start_time = time.time()
-        
-        completion = client.chat.completions.create(
-            model="llama3.2",
-            messages=[{"role": "user", "content": "Hello"}]
-        )
-        
-        end_time = time.time()
-        print(f"{GREEN}✓ OpenAI client warmup completed in {end_time - start_time:.2f}s{RESET}")
-        return True
-    except Exception as e:
-        print(f"{RED}✗ OpenAI client warmup failed: {e}{RESET}")
-        return False
 
-async def warmup_async_ollama():
-    """Warmup using async ollama client (for agents like learning.py, goal.py)"""
-    try:
-        print(f"{CYAN}Warming up async ollama client...{RESET}")
-        
-        client = ollama.AsyncClient()
-        start_time = time.time()
-        
-        response = await client.chat(
-            model='llama3.2',
-            messages=[{'role': 'user', 'content': 'Hello'}],
-        )
-        
-        end_time = time.time()
-        print(f"{GREEN}✓ Async ollama warmup completed in {end_time - start_time:.2f}s{RESET}")
-        return True
-    except Exception as e:
-        print(f"{RED}✗ Async ollama warmup failed: {e}{RESET}")
-        return False
+    t0 = time.perf_counter()
+    r = requests.post(f"{host}/api/generate", json=payload, timeout=60)
+    dt = time.perf_counter() - t0
+    r.raise_for_status()
+    _ = r.json().get("response", "")
+    return dt
 
-def warmup_litellm_model():
-    """Warmup using LiteLLMModel with ollama_chat (for smolagents)"""
-    try:
-        from smolagents import LiteLLMModel, ToolCallingAgent
-        print(f"{CYAN}Warming up LiteLLMModel interface...{RESET}")
-        
-        model = LiteLLMModel(
-            model_id="ollama_chat/llama3.2",
-            api_base="http://localhost:11434",
-            num_ctx=4096,
-            temperature=0.0,
-        )
-        
-        # Create a simple agent without tools for warmup
-        agent = ToolCallingAgent(tools=[], model=model)
-        
-        start_time = time.time()
-        
-        # Make a simple test call through the agent
-        response = agent.run("Hello")
-        
-        end_time = time.time()
-        print(f"{GREEN}✓ LiteLLMModel warmup completed in {end_time - start_time:.2f}s{RESET}")
-        return True
-    except Exception as e:
-        print(f"{RED}✗ LiteLLMModel warmup failed: {e}{RESET}")
-        return False
+def embed_once(host: str, model: str):
+    payload = {
+        "model": model,
+        "input": "warmup embedding path; short text",
+        "keep_alive": "10m"
+    }
+    t0 = time.perf_counter()
+    r = requests.post(f"{host}/api/embeddings", json=payload, timeout=60)
+    dt = time.perf_counter() - t0
+    r.raise_for_status()
+    return dt
 
-def check_ollama_status():
-    """Check if Ollama server is running"""
-    try:
-        import requests
-        response = requests.get("http://localhost:11434/api/tags", timeout=5)
-        if response.status_code == 200:
-            print(f"{GREEN}✓ Ollama server is running{RESET}")
-            return True
-        else:
-            print(f"{RED}✗ Ollama server returned status {response.status_code}{RESET}")
-            return False
-    except Exception as e:
-        print(f"{RED}✗ Ollama server is not reachable: {e}{RESET}")
-        return False
-
-async def main():
-    print(f"{BOLD}{CYAN}AI Agents Model Warmup Script{RESET}")
-    print("=" * 40)
-    
-    # Check if Ollama server is running
-    print(f"{YELLOW}Checking Ollama server status...{RESET}")
-    if not check_ollama_status():
-        print(f"{RED}Error: Ollama server is not running. Please start it first with 'ollama serve'{RESET}")
-        sys.exit(1)
-    
-    print(f"\n{YELLOW}Starting model warmup process...{RESET}")
-    total_start = time.time()
-    
-    success_count = 0
-    total_tests = 4
-    
-    # Warmup different client interfaces
-    if warmup_langchain_ollama():
-        success_count += 1
-    
-    if warmup_openai_client():
-        success_count += 1
-        
-    if await warmup_async_ollama():
-        success_count += 1
-        
-    if warmup_litellm_model():
-        success_count += 1
-    
-    total_end = time.time()
-    
-    print("\n" + "=" * 40)
-    print(f"{BOLD}Warmup Summary:{RESET}")
-    print(f"✓ {success_count}/{total_tests} interfaces warmed up successfully")
-    print(f"⏱  Total warmup time: {total_end - total_start:.2f}s")
-    
-    if success_count == total_tests:
-        print(f"{GREEN}{BOLD}🚀 Model is now warmed up and ready for fast agent responses!{RESET}")
-        sys.exit(0)
+def warm_models(host: str, models: list[str], prompt: str, reps: int, concurrency: int, use_json: str):
+    # Decide JSON mode: if 'auto', try to detect from the prompt (simple heuristic)
+    json_mode = None
+    if use_json == "true":
+        json_mode = True
+    elif use_json == "false":
+        json_mode = False
     else:
-        print(f"{YELLOW}⚠  Some interfaces failed to warmup, but agents should still work{RESET}")
-        sys.exit(1)
+        # auto: if the prompt looks like it primes a tool/JSON path, enable it
+        lowered = prompt.lower()
+        json_mode = any(k in lowered for k in ["json", "tool", "function", "schema"])
+
+    print(f"[warmup] JSON-mode: {json_mode}")
+
+    timings: dict[str, list[float]] = {m: [] for m in models}
+
+    for m in models:
+        # First single warm to instantiate weights/mmap on CPU/GPU
+        try:
+            dt = gen_once(host, m, prompt, json_mode)
+            timings[m].append(dt)
+            print(f"[warmup] {m}: first call {dt:.2f}s")
+        except Exception as e:
+            print(f"[warmup] ERROR first call for {m}: {e}")
+            continue
+
+        # Additional reps with limited concurrency to fill kv-cache and tokenizer paths
+        remaining = max(0, reps - 1)
+        if remaining:
+            with cf.ThreadPoolExecutor(max_workers=concurrency) as ex:
+                futs = [ex.submit(gen_once, host, m, prompt, json_mode)
+                        for _ in range(remaining)]
+                for fut in cf.as_completed(futs):
+                    try:
+                        timings[m].append(fut.result())
+                    except Exception as e:
+                        print(f"[warmup] WARN warm call failed for {m}: {e}")
+
+    return timings
+
+def main():
+    args = parse_args()
+
+    if not ping(args.host):
+        raise SystemExit(f"[warmup] ERROR: Ollama host not reachable at {args.host}")
+
+    models = [m.strip() for m in args.models.split(",") if m.strip()]
+
+    prompt = read_prompt(args.prompt_file)
+    print(f"[warmup] Using prompt from {args.prompt_file} ({len(prompt)} chars)")
+
+    timings = warm_models(args.host, models, prompt, args.reps, args.concurrency, args.json)
+
+    # Embedding model warmup (optional)
+    if args.embed_model:
+        try:
+            dt = embed_once(args.host, args.embed_model)
+            print(f"[warmup] embed {args.embed_model}: {dt:.2f}s")
+        except Exception as e:
+            print(f"[warmup] WARN embedding warmup failed for {args.embed_model}: {e}")
+
+    # Summary
+    print("\n[warmup] summary (seconds):")
+    for m, arr in timings.items():
+        if arr:
+            print(f"  {m}: first={arr[0]:.2f}, median={sorted(arr)[len(arr)//2]:.2f}, all={','.join(f'{x:.2f}' for x in arr)}")
+        else:
+            print(f"  {m}: no timings (errors above)")
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
