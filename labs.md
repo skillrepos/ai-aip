@@ -1,7 +1,7 @@
 # Implementing AI Agents in Python
 ## Using frameworks, MCP, and RAG for agentic AI
 ## Session labs 
-## Revision 1.14 - 09/08/25
+## Revision 1.15 - 11/02/25
 
 **Follow the startup instructions in the README.md file IF NOT ALREADY DONE!**
 
@@ -14,14 +14,14 @@
 ---
 
 **What the agent example does**
-- Uses a local Ollama-served LLM (llama3.2) to interpret natural language queries about weather.
+- Uses a local Ollama-served LLM (llama3.2) to decide to call a tool and interpret natural language queries about weather.
 - Extracts coordinates from the input, queries Open-Meteo for weather data.
-- Converts temperatures and provides a summary forecast using a TAO loop.
+- Provides a summary forecast using a TAO loop.
 
 **What it demonstrates about the framework**
 - Shows how to integrate **LangChain + Ollama** to drive LLM reasoning.
 - Demonstrates **Chain of Thought** reasoning with `Thought → Action → Observation` steps.
-- Introduces simple function/tool calling with a deterministic LLM interface.
+- Introduces simple function/tool calling using an LLM.
 
 --- 
 
@@ -48,7 +48,7 @@ code -d ../extra/lab1-code.txt agent1.py
 5. Once you have run the command, you'll have a side-by-side view in your editor of the completed code and the agent1.py file.
   You can merge each section of code into the agent1.py file by hovering over the middle bar and clicking on the arrows pointing right. Go through each section, look at the code, and then click to merge the changes in, one at a time.
 
-![Side-by-side merge](./images/aa40.png?raw=true "Side-by-side merge") 
+![Side-by-side merge](./images/aip17.png?raw=true "Side-by-side merge") 
 
 6. When you have finished merging all the sections in, the files should show no differences. Save the changes simply by clicking on the "X" in the tab name.
 
@@ -62,7 +62,7 @@ python agent1.py
 
 8. The agent will start running and will prompt for a location (or "exit" to finish). At the prompt, you can type in a location like "Paris, France" or "London" or "Raleigh" and hit *Enter*. After that you'll be able to see the Thought -> Action -> Observation loop in practice as each one is listed out. You'll also see the arguments being passed to the tools as they are called. Finally you should see a human-friendly message from the AI summarizing the weather forecast.  (**NOTE: Since this is having to load up the model initially, it will take up to 3 minutes to return the first response.**)
 
-![Agent run](./images/aa42.png?raw=true "Agent run") 
+![Agent run](./images/aip18.png?raw=true "Agent run") 
 
 9. You can then input another location and run the agent again or exit. Note that if you get a timeout error, the API may be limiting the number of accesses in a short period of time. You can usually just try again and it will work.
 
