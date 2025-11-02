@@ -64,7 +64,7 @@ python agent1.py
 
 ![Agent run](./images/aip18.png?raw=true "Agent run") 
 
-9. You can then input another location and run the agent again or exit. Note that if you get a timeout error, the API may be limiting the number of accesses in a short period of time. You can usually just try again and it will work.
+9. You can then input another location and run the agent again or exit. Note that the API may be limiting the number of accesses in a short period of time. So you may occasionally see it noting a retry.
 
 <p align="center">
 **[END OF LAB]**
