@@ -59,10 +59,18 @@ Thought: <your reasoning about what to do next>
 Action: <exact tool name: geocode_location, get_weather, convert_c_to_f, or DONE>
 Args: <valid JSON arguments for the tool>
 
-Example:
+Examples:
 Thought: I need to find the coordinates for Paris first
 Action: geocode_location
 Args: {"name": "Paris"}
+
+Thought: Now I'll get the weather at those coordinates
+Action: get_weather
+Args: {"lat": 48.8566, "lon": 2.3522}
+
+Thought: I need to convert 20.5 Celsius to Fahrenheit
+Action: convert_c_to_f
+Args: {"c": 20.5}
 
 Do NOT add extra text. Do NOT explain after your three lines.
 """).strip()

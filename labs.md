@@ -142,7 +142,7 @@ code -d ../extra/lab2_mcp_agent.txt mcp_agent_v2.py
 
 7. Review and merge the changes as before. What we're highlighting in this step are the *System Prompt* that drives the LLM used by the agent, the connection with the MCP client at the /mcp/ endpoint, and the mpc calls to the tools on the server. When finished, close the tab to save the changes as before.
 
-![Agent using MCP client code](./images/aiapps39.png?raw=true "Agent using MCP client code") 
+![Agent using MCP client code](./images/aip23.png?raw=true "Agent using MCP client code") 
 
 <br><br>
    
@@ -160,7 +160,7 @@ python mcp_agent_v2.py
 What is the weather in New York?
 ```
 
-![Agent using MCP client running](./images/aiapps40.png?raw=true "Agent using MCP client running") 
+![Agent using MCP client running](./images/aip24.png?raw=true "Agent using MCP client running") 
 
 <br><br>
 
