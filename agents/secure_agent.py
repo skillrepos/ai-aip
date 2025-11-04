@@ -1,9 +1,17 @@
 """
-Secure Agent Template - Students will merge security controls into this file
+Secure Goal Agent - Complete Implementation
+Demonstrates multi-layer security controls to protect agent goals
 """
 
+import re
 import json
+import logging
+from datetime import datetime
+from enum import Enum
 from smolagents import ToolCallingAgent, LiteLLMModel, tool
+
+# Use 1B model for faster demonstration
+MODEL = "ollama/llama3.2:latest"
 
 
 # ========== SECURITY LOGGING SETUP ==========

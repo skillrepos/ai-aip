@@ -778,6 +778,11 @@ python vulnerable_agent.py
 code -d ../extra/secure_agent.txt secure_agent.py
 ```
 
+![Secure agent](./images/aip31.png?raw=true "Secure agent")
+
+<br><br>
+
+
 9. Review what's being added:
    - Goal validation: Check if response aligns with original intent
    - Tool allowlisting: Agent only gets calculator (least privilege)
