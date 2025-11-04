@@ -7,7 +7,7 @@ For educational purposes only - shows why goal protection matters
 from smolagents import ToolCallingAgent, LiteLLMModel, tool
 
 # Use 1B model for faster demonstration
-MODEL = "ollama/llama3.2:1b"
+MODEL = "ollama/llama3.2:latest"
 
 
 # ========== TOOLS (Some dangerous if misused) ==========
