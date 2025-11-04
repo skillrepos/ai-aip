@@ -778,7 +778,7 @@ python vulnerable_agent.py
 code -d ../extra/secure_agent.txt secure_agent.py
 ```
 
-![Secure agent](./images/aip31.png?raw=true "Secure agent")
+![Secure agent](./images/aip32.png?raw=true "Secure agent")
 
 <br><br>
 
@@ -794,7 +794,7 @@ code -d ../extra/secure_agent.txt secure_agent.py
 
 11. Now run the secure agent:
 ```
-python secure_goal_agent.py
+python secure_agent.py
 ```
 
 12. **TEST 1 - Legitimate Use**: Enter a normal math query (or press ENTER for default).
