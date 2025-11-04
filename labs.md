@@ -566,11 +566,16 @@ python ../extra/reflect_agent_verbose.py
 code test_agent_reasoning.py
 ```
 
+<br><br>
+
 2. Notice the test structure:
    - Mock LLM returns (instant - no waiting)
    - Tests verify: "Did agent choose calculator for math?"
    - Tests verify: "Did agent choose weather for location query?"
    - Agent reasoning logic tested, not LLM quality
+
+
+<br><br>
 
 3. Run the mock-based reasoning tests (instant). Note: Use `python -m pytest` and add `-s` flag to see test output:
 ```
@@ -580,6 +585,10 @@ python -m pytest test_agent_reasoning.py::test_agent_selects_weather -v -s
 
 You should see output showing what each test validates. The `-s` flag shows print statements so you can see what's being tested.
 
+![Passing test](./images/aip25.png?raw=true "Passing test")
+
+<br><br>
+
 4. These pass instantly because we're testing the agent's tool routing logic with predetermined responses. Now let's test ambiguity handling:
 ```
 python -m pytest test_agent_reasoning.py::test_ambiguous_query -v -s
@@ -587,16 +596,25 @@ python -m pytest test_agent_reasoning.py::test_ambiguous_query -v -s
 
 5. This test verifies the agent asks for clarification when query is unclear. All instant because LLM responses are mocked.
 
+![Passing test](./images/aip26.png?raw=true "Passing test")
+
+<br><br>
+
 6. Now let's test error recovery - what happens when a tool fails?
 ```
 python -m pytest test_agent_reasoning.py::test_tool_failure_recovery -v -s
 ```
+<br><br>
 
 7. Watch the output - you'll see the tool return an error message (not crash), demonstrating that the agent can receive errors and explain them to users. This completes instantly with mocked responses.
 
-8. Now the real test: Let's verify actual agent reasoning with the 1B model. This tests if the agent can REASON about which tool to use:
+![Passing test](./images/aip27.png?raw=true "Passing test")
+
+<br><br>
+
+8. Now the real test: Let's verify actual agent reasoning with the model. This tests if the agent can REASON about which tool to use:
 ```
-OLLAMA_MODEL=llama3.2:1b python -m pytest test_agent_reasoning.py::test_real_agent_tool_selection -v -s
+python -m pytest test_agent_reasoning.py::test_real_agent_tool_selection -v -s
 ```
 
 This will (~2-3 min):
@@ -604,6 +622,11 @@ This will (~2-3 min):
 - Test that agent correctly identifies TWO tasks
 - Test that agent calls BOTH tools (calculator AND weather)
 - Verify agent reasoning chain
+
+![Passing test](./images/aip28.png?raw=true "Passing test")
+
+<br><br>
+
 
 9. While waiting, open the test to see what's being validated:
 ```
