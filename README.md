@@ -10,7 +10,11 @@ These instructions will guide you through configuring a GitHub Codespaces enviro
 **1. Change your codespace's default timeout from 30 minutes to longer.**
 To do this, when logged in to GitHub, go to https://github.com/settings/codespaces and scroll down on that page until you see the *Default idle timeout* section. Adjust the value as desired.
 
+<br><br>
+
 ![Changing codespace idle timeout value](./images/aa4.png?raw=true "Changing codespace idle timeout value")
+
+<br><br>
 
 **2. Click on the button below to start a new codespace from this repository.**
 
@@ -36,6 +40,9 @@ The codespace is ready to use when you see a prompt like the one shown below in 
 
 **4. Open up the *labs.md* file so you can follow along with the labs.**
 You can either open it in a separate browser instance or open it in the codespace. 
+
+<br><br>
+
 ![Opening labs](./images/aip4.png?raw=true "Opening labs")
 
 **Now, you are ready for the labs!**
