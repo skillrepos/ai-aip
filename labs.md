@@ -539,78 +539,184 @@ python ../extra/reflect_agent_verbose.py
 </p>
 </br></br>
 
-**Lab 7 - Useful Implementation Approaches**
+**Lab 7 - Testing Agent Reasoning and Tool Selection**
 
-**Purpose: In this lab, we’ll explore some useful implementation approaches in creating agents including using canonical queries and processing structured data.** 
+**Purpose: Learn to validate agent behavior - testing if agents reason correctly, select appropriate tools, and handle edge cases.**
 
 ---
 
-**What the agent example does**
-- Accepts natural language questions like “What’s the average revenue?”
-- Uses the **LLM as a planner** to decide which tool to call (`load_data` or `analyze_offices`)
-- LLM maps the user’s request to a **canonical query string** (e.g., `"average_revenue"`)
-- The canonical query is passed to a deterministic tool that performs **real data analysis** using `pandas`
-- If needed, the LLM first calls `load_data()` and then **replans** the next step with updated context
-- The agent returns grounded, reliable answers from a local `offices.csv` file
+**What you'll test:**
+- Agent tool selection logic
+- Reasoning with ambiguous queries
+- Error recovery behavior
+- One real agent reasoning test (llama3.2:1b)
 
-**What it demonstrates about the framework**
-- Implements a **ReAct-style loop**: Thought → Action → Observation → Re-plan
-- Uses the LLM for **semantic translation**, not computation
-- Demonstrates the use of **canonical queries** to simplify and stabilize tool interfaces
-- Enables **structured tool invocation** for repeatability and testing
-
+**What it demonstrates:**
+- How to verify agent decision-making
+- Testing reasoning patterns (ReAct loop)
+- Mocking for fast iteration, then real validation
+- Catching faulty agent logic before production
 
 ---
 
 ### Steps
 
-1. For this lab, we have an application that reads in a data file in CSV format as our data source. The CSV file we're using employee counts, revenues, and year opened corresponding to the list of offices we used for the RAG PDF in lab 4. You can see the CSV content in the repo at  [**data/offices.csv**](./data/offices.csv) 
-
-![Data csv](./images/aip12.png?raw=true "Data csv") 
-
-2. As before, we'll build out the agent code with the diff/merge facility. Run the command below.
+1. We have an agent with multiple tools (calculator, weather, currency). The agent must REASON about which tool to use. View the test file:
 ```
-code -d ../extra/lab7-code.txt agent7.py
+code test_agent_reasoning.py
 ```
 
-![Diffs](./images/aip5.png?raw=true "Diffs") 
+2. Notice the test structure:
+   - Mock LLM returns (instant - no waiting)
+   - Tests verify: "Did agent choose calculator for math?"
+   - Tests verify: "Did agent choose weather for location query?"
+   - Agent reasoning logic tested, not LLM quality
 
-3. The changes you're merging in this time include:
-
-- Loading data from the csv file
-- Tool to analyze office data using canonical query strings
-- Section of system prompt that describes available tools and TAO process
-- Call to model
-- Action to choose tool
-
-<br></br>
-4. Also note that we're not using a formal framework this time. When you're done merging, close the tab as usual to save your changes. Now, in a terminal, run the agent with the command below. You'll see a prompt like "Office Data Agent is ready - type a question or 'exit' to quit.
-
+3. Run the mock-based reasoning tests (instant). Note: Use `python -m pytest` and add `-s` flag to see test output:
 ```
-python agent7.py
+python -m pytest test_agent_reasoning.py::test_agent_selects_calculator -v -s
+python -m pytest test_agent_reasoning.py::test_agent_selects_weather -v -s
 ```
 
-![agent running](./images/aip13.png?raw=true "agent running") 
+You should see output showing what each test validates. The `-s` flag shows print statements so you can see what's being tested.
 
-5. At the agent's prompt, you can enter a query like the one below. 
-
+4. These pass instantly because we're testing the agent's tool routing logic with predetermined responses. Now let's test ambiguity handling:
 ```
-What's the average revenue across all offices?
-```
-
-6. After you hit *Enter*, you should see the agent pause for a while and then start showing its thoughts and actions. It should explain which tools it chose and why. You can look back in the code and see if you can follow the flow in the code.
-
-![agent workflow](./images/aip14.png?raw=true "agent workflow")    
-
-7. You can now ask other questions of the agent if you want related to the data. Here's some suggestions:
-
-```
-"Which office has the most employees?"
-“List offices opened after 2013.”
-“Which city generates the highest revenue per employee?”
+python -m pytest test_agent_reasoning.py::test_ambiguous_query -v -s
 ```
 
-8. Compare the questions and responses with the code used to answer them and see if you can trace the flow in the code from the query to the response.
+5. This test verifies the agent asks for clarification when query is unclear. All instant because LLM responses are mocked.
+
+6. Now let's test error recovery - what happens when a tool fails?
+```
+python -m pytest test_agent_reasoning.py::test_tool_failure_recovery -v -s
+```
+
+7. Watch the output - you'll see the tool return an error message (not crash), demonstrating that the agent can receive errors and explain them to users. This completes instantly with mocked responses.
+
+8. Now the real test: Let's verify actual agent reasoning with the 1B model. This tests if the agent can REASON about which tool to use:
+```
+OLLAMA_MODEL=llama3.2:1b python -m pytest test_agent_reasoning.py::test_real_agent_tool_selection -v -s
+```
+
+This will (~2-3 min):
+- Give agent: "What's 25 times 4 and what's the weather in Tokyo?"
+- Test that agent correctly identifies TWO tasks
+- Test that agent calls BOTH tools (calculator AND weather)
+- Verify agent reasoning chain
+
+9. While waiting, open the test to see what's being validated:
+```
+code test_agent_reasoning.py
+```
+
+Look at `test_real_agent_tool_selection()` - it checks:
+- Did agent parse the compound query?
+- Did agent sequence tool calls correctly?
+- Did agent synthesize results?
+
+10. After completion, review the key insight: We tested AGENT BEHAVIOR (reasoning, tool selection, error handling) not just code correctness. This is agentic testing.
+
+### Production Testing Considerations
+
+**Note**: This lab covers unit and basic integration testing with mocked LLM responses for fast iteration, plus one real validation test. For production agent systems, you should also implement:
+
+**Additional Test Types**:
+- **End-to-end workflow tests**: Test complete user journeys through multi-step agent workflows
+- **Performance/load testing**: Validate response times under various loads and concurrent users
+- **Regression testing**: Ensure agent behavior remains consistent across LLM model updates
+- **Edge case testing**: Test unusual inputs, ambiguous queries, and boundary conditions
+
+**Monitoring & Observability**:
+- Implement logging for all agent decisions and tool calls
+- Use LLM observability platforms (LangSmith, Weights & Biases, Arize)
+- Track metrics: success rate, average response time, tool call accuracy, user satisfaction
+- Set up alerts for anomalous behavior or degraded performance
+
+**Testing Best Practices**:
+- Mock LLM calls for 90% of tests (speed + determinism)
+- Use small, fast models (like llama3.2:1b) for integration tests
+- Reserve full model testing for critical user paths only
+- Version control your test prompts and expected behaviors
+- Maintain a test suite that covers your agent's "safety rails"
+
+<p align="center">
+**[END OF LAB]**
+</p>
+</br></br>
+
+**Lab 8 - Securing Agents Against Manipulation**
+
+**Purpose: Learn how agents can be manipulated through prompt injection and how to build resistant agents.**
+
+---
+
+**What you'll secure:**
+- Agent goal manipulation (prompt injection)
+- Agent tool access control
+- One real attack demonstration (llama3.2:1b)
+
+**What it demonstrates:**
+- How attackers manipulate agent reasoning
+- Defense layers for agentic systems
+- Building agents that resist goal hijacking
+- The difference between vulnerable and hardened agents
+
+---
+
+### Steps
+
+1. First, understand the threat. View a simple agent with a clear goal:
+```
+code vulnerable_goal_agent.py
+```
+
+2. This agent has ONE job: "Help with math calculations only." But notice:
+   - No input validation
+   - System prompt is the only guardrail
+   - Multiple tools available (calculator, email_simulator, data_delete)
+
+3. Let's see if we can manipulate this agent's goal. Run the vulnerable agent:
+```
+python vulnerable_goal_agent.py
+```
+
+4. The script runs two tests automatically. First, a legitimate query to show normal operation. Then it attempts a goal hijacking attack. Watch the output carefully (~3-4 min total for both LLM calls).
+
+5. The attack attempts to change the agent's goal from "math assistance" to "send email". If the injection works, the agent calls the wrong tool for the wrong reason. This is goal manipulation - the core agent security problem.
+
+6. After both tests complete, review the vulnerability summary. The key issues are:
+   - Tool over-provisioning (agent has unnecessary tools)
+   - No goal validation
+   - No input filtering
+   - Weak system prompt
+
+7. Now let's build a resistant agent. View the security code:
+```
+code -d ../extra/lab9-secure-agent.txt secure_goal_agent.py
+```
+
+8. Review what's being added:
+   - Goal validation: Check if response aligns with original intent
+   - Tool allowlisting: Agent only gets calculator (least privilege)
+   - Input inspection: Flag goal-hijacking language
+   - System prompt hardening: Explicit resistance instructions
+   - Security logging: Track attack attempts
+
+9. Merge the changes section by section, paying attention to the defense-in-depth strategy with 5 security layers.
+
+10. Now run the secure agent:
+```
+python secure_goal_agent.py
+```
+
+11. Watch the secure agent handle the same attack (~3-4 min total):
+   - Input validation catches suspicious patterns
+   - Attack is blocked BEFORE reaching the LLM (instant, free)
+   - Even if it reached LLM, tool allowlist prevents email_simulator access
+   - Agent maintains its original goal
+
+Compare the results: Vulnerable agents have goals that can be CHANGED by users. Secure agents have goals that are PROTECTED by architecture, not just prompts.
 
 <p align="center">
 **[END OF LAB]**
