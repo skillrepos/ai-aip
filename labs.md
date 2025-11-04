@@ -689,27 +689,6 @@ Look at `test_real_agent_tool_selection()` - it checks:
 
 ### Steps
 
-**Lab 9 - Securing Agents Against Manipulation**
-
-**Purpose: Learn how agents can be manipulated through prompt injection and how to build resistant agents.**
-
----
-
-**What you'll secure:**
-- Agent goal manipulation (prompt injection)
-- Agent tool access control
-- One real attack demonstration (llama3.2)
-
-**What it demonstrates:**
-- How attackers manipulate agent reasoning
-- Defense layers for agentic systems
-- Building agents that resist goal hijacking
-- The difference between vulnerable and hardened agents
-
----
-
-### Steps
-
 1. First, understand the threat. View a simple agent with a clear goal:
 ```
 code vulnerable_agent.py
