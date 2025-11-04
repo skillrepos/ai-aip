@@ -25,7 +25,7 @@ tokenizers==0.21.2    # satisfies transformers 4.52.x (>=0.21,<0.22)
 python-dotenv==1.1.1
 requests>=2.28        # for the weather‐lookup tool
 httptools==0.6.4
-pdfminer-six==20250506
+pdfminer-six==20231228
 sentence-transformers==4.1.0
 uvloop==0.21.0
 watchfiles==1.1.0
