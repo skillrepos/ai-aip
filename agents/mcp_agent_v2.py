@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Lab 3: TAO Agent with FastMCP Weather Server
+Lab 2: TAO Agent with FastMCP Weather Server
 ────────────────────────────────────────────────────────────────────
 A TRUE agentic implementation where the LLM dynamically selects which
 tools to call and when to stop. This demonstrates:

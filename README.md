@@ -38,7 +38,17 @@ The codespace is ready to use when you see a prompt like the one shown below in 
 
 <br><br>
 
-**4. Open up the *labs.md* file so you can follow along with the labs.**
+**4. Run the *warm-up* script for faster LLM interactions.**
+
+```
+python scripts/warmup.py --embed --keep-alive 300m --auto-pull
+```
+
+![Run warmup script](./images/aip22.png?raw=true "Run warmup script")
+
+<br><br>
+
+**5. Open up the *labs.md* file so you can follow along with the labs.**
 You can either open it in a separate browser instance or open it in the codespace. 
 
 <br><br>

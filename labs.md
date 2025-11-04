@@ -60,11 +60,11 @@ code -d ../extra/lab1-code.txt agent1.py
 python agent1.py
 ```
 
-8. The agent will start running and will prompt for a location (or "exit" to finish). At the prompt, you can type in a location like "Paris, France" or "London" or "Raleigh" and hit *Enter*. After that you'll be able to see the Thought -> Action -> Observation loop in practice as each one is listed out. You'll also see the arguments being passed to the tools as they are called. Finally you should see a human-friendly message from the AI summarizing the weather forecast.  (**NOTE: Since this is having to load up the model initially, it will take up to 3 minutes to return the first response.**)
+8. The agent will start running and will prompt for a location (or "exit" to finish). At the prompt, you can type in a location like "Paris, France" or "London" or "Raleigh" and hit *Enter*. After that you'll be able to see the Thought -> Action -> Observation loop in practice as each one is listed out. You'll also see the arguments being passed to the tools as they are called. Finally you should see a human-friendly message from the AI summarizing the weather forecast.  (**NOTE: Since this is having to load up the model initially, it may take a while to respond.)
 
 ![Agent run](./images/aip18.png?raw=true "Agent run") 
 
-9. You can then input another location and run the agent again or exit. Note that the API may be limiting the number of accesses in a short period of time. So you may occasionally see it noting a retry.
+9. You can then input another location and run the agent again or exit. Note that the API may be limiting the number of accesses in a short period of time. So you may occasionally see it noting a retry. When done, just enter "exit".
 
 <p align="center">
 **[END OF LAB]**
@@ -94,10 +94,10 @@ python agent1.py
 1. We have partial implementations of an MCP server and an agent that uses an MCP client to connect to tools on the server. So that you can get acquainted with the main parts of each, we'll build them out as we did the agent in the second lab - by viewing differences and merging. Let's start with the server. Run the command below to see the differences.
 
 ```
-code -d labs/common/lab3_server_solution.txt mcp_server.py
+code -d ../extra/lab2_mcp_server.txt mcp_server_v2.py
 ```
 
-![MCP server code](./images/aiapps18.png?raw=true "MCP server code") 
+![MCP server code](./images/aip19.png?raw=true "MCP server code") 
 
 <br><br>
 
@@ -108,24 +108,24 @@ code -d labs/common/lab3_server_solution.txt mcp_server.py
 3. Now that we've built out the server code, run it using the command below. You should see some startup messages similar to the ones in the screenshot.
 
 ```
-python mcp_server.py
+python mcp_server_v2.py
 ```
 
-![MCP server start](./images/31ai18.png?raw=true "MCP server start") 
+![MCP server start](./images/aip20.png?raw=true "MCP server start") 
 
 <br><br>
 
 4. Since this terminal is now tied up with the running server, we need to have a second terminal to use to work with the client. So that we can see the server responses, let's just open another terminal side-by-side with this one. To do that, over in the upper right section of the *TERMINAL* panel, find the plus sign and click on the downward arrow next to it. (See screenshot below.) Then select "Split Terminal" from the popup menu. Then click into that terminal to do the steps for the rest of the lab. (FYI: If you want to open another full terminal at some point, you can just click on the "+" itself and not the down arrow.)
 
-![Opening a second terminal](./images/aiapps38.png?raw=true "Opening a second terminal") 
+![Opening a second terminal](./images/aip21.png?raw=true "Opening a second terminal") 
 
 <br><br>
 
-5. We also have a small tool that can call the MCP *discover* method to find the list of tools from our server. This is just for demo purposes. You can take a look at the code either by clicking on [**tools/discover_tools.py**](./tools/discover_tools.py) or by entering the first command below in the codespace's terminal. The actual code here is minimal. It connects to our server and invokes the list_tools method. Run it with the second command below and you should see the list of tools like in the screenshot.
+5. We also have a small tool that can call the MCP *discover* method to find the list of tools from our server. This is just for demo purposes. You can take a look at the code either by clicking on [**scripts/discover_tools.py**](./scripts/discover_tools.py) or by entering the first command below in the codespace's terminal. The actual code here is minimal. It connects to our server and invokes the list_tools method. Run it with the second command below and you should see the list of tools like in the screenshot.
 
 ```
-code tools/discover_tools.py
-python tools/discover_tools.py
+code ../scripts/discover_tools.py
+python ../scripts/discover_tools.py
 ```
 
 ![Discovering tools](./images/aiapps19.png?raw=true "Discovering tools") 
@@ -135,7 +135,7 @@ python tools/discover_tools.py
 6. Now, let's turn our attention to the agent that will use the MCP server through an MCP client interface. First, in the second terminal, run a diff command so we can build out the new agent.
 
 ```
-code -d labs/common/lab3_agent_solution_dynamic.txt mcp_agent.py
+code -d ../extra/lab2_mcp_agent.txt mcp_agent_v2.py
 ```
 
 <br><br>
@@ -149,7 +149,7 @@ code -d labs/common/lab3_agent_solution_dynamic.txt mcp_agent.py
 8. After you've made and saved the changes, you can run the client in the terminal with the command below. **Note that there may be a long pause initially while the model is loaded and processed before you get the final answer. This could be on the order of minutes.**
 
 ```
-python mcp_agent.py
+python mcp_agent_v2.py
 ```
 
 <br><br>
