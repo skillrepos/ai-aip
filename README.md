@@ -59,28 +59,17 @@ You can either open it in a separate browser instance or open it in the codespac
 
 <br><br>
 
-**5. Run the script below to "warm up" access for the local model to reduce response times for some of the labs.**
-In the codespace *TERMINAL*, run the command below.
-
-```
-scripts/warmup.sh
-```
-
-![LLM warmup](./images/aip16.png?raw=true "LLM warmup")
-
-<br><br>
-
-
 
 **NOTE: If your codespace times out and you need to reopen it**
 
 1. Go to https://github.com/your_github_userid/codespaces
 2. Find the codespace in the list, right-click, and select *Open in browser*
 3. Run the *ollama serve &* command to restart Ollama
+   
 ```
 ollama serve &
 ```
-
+4. Repeat the step above to run the warmup script again.
 <br/><br/>
 
 
