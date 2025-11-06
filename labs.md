@@ -1,7 +1,7 @@
 # Implementing AI Agents in Python
 ## Using frameworks, MCP, and RAG for agentic AI
 ## Session labs 
-## Revision 1.20 - 11/06/25
+## Revision 1.21 - 11/06/25
 
 **Follow the startup instructions in the README.md file IF NOT ALREADY DONE!**
 
@@ -665,6 +665,8 @@ You should see output showing what each test validates. The `-s` flag shows prin
 python -m pytest test_agent_reasoning.py::test_ambiguous_query -v -s
 ```
 
+<br><br>
+
 5. This test verifies the agent asks for clarification when query is unclear. All instant because LLM responses are mocked.
 
 ![Passing test](./images/aip26.png?raw=true "Passing test")
@@ -710,6 +712,8 @@ Look at `test_real_agent_tool_selection()` - it checks:
 - Did agent synthesize results?
 
 10. After completion, review the key insight: We tested AGENT BEHAVIOR (reasoning, tool selection, error handling) not just code correctness. This is agentic testing.
+
+<br><br>
 
 ### Production Testing Considerations
 
@@ -765,10 +769,14 @@ Look at `test_real_agent_tool_selection()` - it checks:
 code vulnerable_agent.py
 ```
 
+<br><br>
+
 2. This agent has ONE job: "Help with math calculations only." But notice:
    - No input validation
    - System prompt is the only guardrail
    - Multiple tools available (calculator, email_simulator, data_delete)
+
+<br><br>
 
 3. Let's see if we can manipulate this agent's goal. Run the interactive vulnerable agent:
 ```
