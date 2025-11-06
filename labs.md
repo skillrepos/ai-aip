@@ -1,7 +1,7 @@
 # Implementing AI Agents in Python
 ## Using frameworks, MCP, and RAG for agentic AI
 ## Session labs 
-## Revision 1.16 - 11/04/25
+## Revision 1.17 - 11/06/25
 
 **Follow the startup instructions in the README.md file IF NOT ALREADY DONE!**
 
@@ -32,27 +32,38 @@
 cd agents
 ```
 
+<br><br>
+
 2. For this lab, we have the outline of an agent in a file called *agent1.py* in that directory. You can take a look at the code either by clicking on [**agents/agent1.py**](./agents/agent1.py) or by entering the command below in the codespace's terminal.
    
 ```
 code agent1.py
 ```
+<br><br>
 
 3. If you scroll through this file, you can see it outlines the steps the agent will go through without all the code. When you are done looking at it, close the file by clicking on the "X" in the tab at the top of the file.
+
+<br><br>
 
 4. Now, let's fill in the code. To keep things simple and avoid formatting/typing frustration, we already have the code in another file that we can merge into this one. Run the command below in the terminal.
 ```
 code -d ../extra/lab1-code.txt agent1.py
 ```
 
+<br><br>
+
 5. Once you have run the command, you'll have a side-by-side view in your editor of the completed code and the agent1.py file.
   You can merge each section of code into the agent1.py file by hovering over the middle bar and clicking on the arrows pointing right. Go through each section, look at the code, and then click to merge the changes in, one at a time.
 
 ![Side-by-side merge](./images/aip17.png?raw=true "Side-by-side merge") 
 
+<br><br>
+
 6. When you have finished merging all the sections in, the files should show no differences. Save the changes simply by clicking on the "X" in the tab name.
 
 ![Merge complete](./images/aa41.png?raw=true "Merge complete") 
+
+<br><br>
 
 7. Now you can run your agent with the following command:
 
@@ -60,9 +71,13 @@ code -d ../extra/lab1-code.txt agent1.py
 python agent1.py
 ```
 
+<br><br>
+
 8. The agent will start running and will prompt for a location (or "exit" to finish). At the prompt, you can type in a location like "Paris, France" or "London" or "Raleigh" and hit *Enter*. After that you'll be able to see the Thought -> Action -> Observation loop in practice as each one is listed out. You'll also see the arguments being passed to the tools as they are called. Finally you should see a human-friendly message from the AI summarizing the weather forecast.  (**NOTE: Since this is having to load up the model initially, it may take a while to respond.)
 
 ![Agent run](./images/aip18.png?raw=true "Agent run") 
+
+<br><br>
 
 9. You can then input another location and run the agent again or exit. Note that the API may be limiting the number of accesses in a short period of time. So you may occasionally see it noting a retry. When done, just enter "exit".
 
@@ -97,15 +112,13 @@ python agent1.py
 code -d ../extra/lab2_mcp_server.txt mcp_server_v2.py
 ```
 
+As you look at the differences, note that we are using FastMCP to more easily set up a server, with its *@mcp.tool* decorators to designate our functions as MCP tools. Also, we run this using the *streamable-http* transport protocol. Review each difference to see what is being done, then use the arrows to merge. When finished, click the "x"" in the tab at the top to close and save the files.
+
 ![MCP server code](./images/aip19.png?raw=true "MCP server code") 
 
 <br><br>
 
-2. As you look at the differences, note that we are using FastMCP to more easily set up a server, with its *@mcp.tool* decorators to designate our functions as MCP tools. Also, we run this using the *streamable-http* transport protocol. Review each difference to see what is being done, then use the arrows to merge. When finished, click the "x"" in the tab at the top to close and save the files.
-
-<br><br>
-
-3. Now that we've built out the server code, run it using the command below. You should see some startup messages similar to the ones in the screenshot.
+2. Now that we've built out the server code, run it using the command below. You should see some startup messages similar to the ones in the screenshot.
 
 ```
 python mcp_server_v2.py
@@ -115,13 +128,13 @@ python mcp_server_v2.py
 
 <br><br>
 
-4. Since this terminal is now tied up with the running server, we need to have a second terminal to use to work with the client. So that we can see the server responses, let's just open another terminal side-by-side with this one. To do that, over in the upper right section of the *TERMINAL* panel, find the plus sign and click on the downward arrow next to it. (See screenshot below.) Then select "Split Terminal" from the popup menu. Then click into that terminal to do the steps for the rest of the lab. (FYI: If you want to open another full terminal at some point, you can just click on the "+" itself and not the down arrow.)
+3. Since this terminal is now tied up with the running server, we need to have a second terminal to use to work with the client. So that we can see the server responses, let's just open another terminal side-by-side with this one. To do that, over in the upper right section of the *TERMINAL* panel, find the plus sign and click on the downward arrow next to it. (See screenshot below.) Then select "Split Terminal" from the popup menu. Then click into that terminal to do the steps for the rest of the lab. (FYI: If you want to open another full terminal at some point, you can just click on the "+" itself and not the down arrow.)
 
 ![Opening a second terminal](./images/aip21.png?raw=true "Opening a second terminal") 
 
 <br><br>
 
-5. We also have a small tool that can call the MCP *discover* method to find the list of tools from our server. This is just for demo purposes. You can take a look at the code either by clicking on [**scripts/discover_tools.py**](./scripts/discover_tools.py) or by entering the first command below in the codespace's terminal. The actual code here is minimal. It connects to our server and invokes the list_tools method. Run it with the second command below and you should see the list of tools like in the screenshot.
+4. We also have a small tool that can call the MCP *discover* method to find the list of tools from our server. This is just for demo purposes. You can take a look at the code either by clicking on [**scripts/discover_tools.py**](./scripts/discover_tools.py) or by entering the first command below in the codespace's terminal. The actual code here is minimal. It connects to our server and invokes the list_tools method. Run it with the second command below and you should see the list of tools like in the screenshot.
 
 ```
 code ../scripts/discover_tools.py
@@ -132,7 +145,7 @@ python ../scripts/discover_tools.py
 
 <br><br>
 
-6. Now, let's turn our attention to the agent that will use the MCP server through an MCP client interface. First, in the second terminal, run a diff command so we can build out the new agent.
+5. Now, let's turn our attention to the agent that will use the MCP server through an MCP client interface. First, in the second terminal, run a diff command so we can build out the new agent.
 
 ```
 code -d ../extra/lab2_mcp_agent.txt mcp_agent_v2.py
@@ -140,13 +153,13 @@ code -d ../extra/lab2_mcp_agent.txt mcp_agent_v2.py
 
 <br><br>
 
-7. Review and merge the changes as before. What we're highlighting in this step are the *System Prompt* that drives the LLM used by the agent, the connection with the MCP client at the /mcp/ endpoint, and the mpc calls to the tools on the server. When finished, close the tab to save the changes as before.
+6. Review and merge the changes as before. What we're highlighting in this step are the *System Prompt* that drives the LLM used by the agent, the connection with the MCP client at the /mcp/ endpoint, and the mpc calls to the tools on the server. When finished, close the tab to save the changes as before.
 
 ![Agent using MCP client code](./images/aip23.png?raw=true "Agent using MCP client code") 
 
 <br><br>
    
-8. After you've made and saved the changes, you can run the client in the terminal with the command below. **Note that there may be a long pause initially while the model is loaded and processed before you get the final answer. This could be on the order of minutes.**
+7. After you've made and saved the changes, you can run the client in the terminal with the command below. **Note that there may be a long pause initially while the model is loaded and processed before you get the final answer. This could be on the order of minutes.**
 
 ```
 python mcp_agent_v2.py
@@ -154,7 +167,7 @@ python mcp_agent_v2.py
 
 <br><br>
 
-9. The agent should start up, and wait for you to prompt it about weather in a location. You'll be able to see similar TAO output. And you'll also be able to see the server INFO messages in the other terminal as the MCP connections and events happen. A suggested prompt is below.
+8. The agent should start up, and wait for you to prompt it about weather in a location. You'll be able to see similar TAO output. And you'll also be able to see the server INFO messages in the other terminal as the MCP connections and events happen. A suggested prompt is below.
 
 ```
 What is the weather in New York?
@@ -164,7 +177,7 @@ What is the weather in New York?
 
 <br><br>
 
-10. When you're done, you can use 'exit' to stop the client and CTRL-C to stop the server.
+9. When you're done, you can use 'exit' to stop the client and CTRL-C to stop the server.
     
 <p align="center">
 **[END OF LAB]**
