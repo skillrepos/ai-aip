@@ -141,7 +141,7 @@ code ../scripts/discover_tools.py
 python ../scripts/discover_tools.py
 ```
 
-![Discovering tools](./images/aiapps19.png?raw=true "Discovering tools") 
+![Discovering tools](./images/aip33.png?raw=true "Discovering tools") 
 
 <br><br>
 
