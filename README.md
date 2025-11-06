@@ -69,7 +69,7 @@ You can either open it in a separate browser instance or open it in the codespac
 ```
 ollama serve &
 ```
-4. Repeat the step above to run the warmup script again.
+4. Repeat the step from the main section (#4) above to run the warmup script again.
 <br/><br/>
 
 
