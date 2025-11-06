@@ -206,41 +206,50 @@ What is the weather in New York?
 
 1. For this lab, we have a simple application that does currency conversion using prompts of the form "Convert 100 USD to EUR", where *USD* = US dollars and *EUR* = euros.  It will also remember previous values and invocations.
 
+<br><br>
 
 2. As before, we'll use the "view differences and merge" technique to learn about the code we'll be working with. The command to run this time is below:
 
 ```
 code -d ../extra/curr_conv_agent.txt curr_conv_agent.py
 ```
-</br></br>
-
-![Code for memory agent](./images/aa68.png?raw=true "Code for memory agent") 
-
-3. The code in this application showcases several SmolAgents features and agent techniques including the following. See how many you can identify as your reviewing the code.
+</br>
+The code in this application showcases several SmolAgents features and agent techniques including the following. See how many you can identify as your reviewing the code.
 
 - **@tool decorator** turns your Python functions into callable “tools” for the agent.  
 - **LiteLLMModel** plugs in your local Ollama llama3.2 as the agent’s reasoning engine.  
 - **CodeAgent** runs a ReAct loop: think (LLM), act (call tool), observe, repeat.  
 - **Memory feature** remembers current values and persists them (with history) to an external JSON file.  
+<br>
 
 
-4. When you're done merging, close the tab as usual to save your changes. Now, in a terminal, run the agent with the command below:
+![Code for memory agent](./images/aa68.png?raw=true "Code for memory agent") 
+
+<br><br>
+
+3. When you're done merging, close the tab as usual to save your changes. Now, in a terminal, run the agent with the command below:
 
 ```
 python curr_conv_agent.py
 ```
 
-5. Enter a basic prompt like the one below.
+<br><br>
+
+4. Enter a basic prompt like the one below.
 
 ```
 Convert 100 USD to EUR
 ```
 
-6. The agent will run for a while and not return as the LLM loads and the processing happens. When it is finished with this run, you'll see output like the screenshot below. Notice that since we used the SmolAgents CodeAgent type, you can see the code it created and executed in the black box. **NOTE: This initial run will take several minutes!**  While you are waiting on it to complete, this is a good time to go back and look at the code in *curr_conv_agent.py* to understand more about it.
+<br><br>
+
+5. The agent will run for a while and not return as the LLM loads and the processing happens. When it is finished with this run, you'll see output like the screenshot below. Notice that since we used the SmolAgents CodeAgent type, you can see the code it created and executed in the black box. **NOTE: This initial run will take several minutes!**  While you are waiting on it to complete, this is a good time to go back and look at the code in *curr_conv_agent.py* to understand more about it.
 
 ![Running agent](./images/aa69.png?raw=true "Running agent")   
 
-7. Now you can try some partial inputs with missing values to demonstrate the agent remembering arguments that were passed to it before. Here are some to try. Output is shown in the screenshot. (You may see some intermediate steps. You're looking for the one with "Final answer" in it.)
+<br><br>
+
+6. Now you can try some partial inputs with missing values to demonstrate the agent remembering arguments that were passed to it before. Here are some to try. Output is shown in the screenshot. (You may see some intermediate steps. You're looking for the one with "Final answer" in it.)
 
 ```
 Convert 200
@@ -250,8 +259,9 @@ Convert 400 to JPY
 ![Running with partial inputs](./images/aa70.png?raw=true "Running agent")  
 ![Running with partial inputs](./images/aa71.png?raw=true "Running agent")   
 
+<br><br>
 
-8. To see the stored history information on disk, type "exit" to exit the tool. Then in the terminal type the command below to see the contents of the file.
+7. To see the stored history information on disk, type "exit" to exit the tool. Then in the terminal type the command below to see the contents of the file.
 
 ```
 cat currency_memory.json
@@ -259,7 +269,9 @@ cat currency_memory.json
 
 ![Running with partial inputs](./images/aa72.png?raw=true "Running agent") 
 
-9. Finally, you can start the agent again and enter "history" at the prompt to see the persisted history from before. Then you can try a query and it should pick up as before. In the example, we used the query below:
+<br><br>
+
+8. Finally, you can start the agent again and enter "history" at the prompt to see the persisted history from before. Then you can try a query and it should pick up as before. In the example, we used the query below:
 
 ```
 convert 300
@@ -267,8 +279,9 @@ convert 300
 
 ![Running with partial inputs](./images/aa73.png?raw=true "Running agent")   
 
+<br><br>
 
-10.  Just type "exit" when ready to quit the tool.
+9. Just type "exit" when ready to quit the tool.
 
 <p align="center">
 **[END OF LAB]**
