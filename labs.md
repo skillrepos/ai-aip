@@ -1,7 +1,7 @@
 # Implementing AI Agents in Python
 ## Using frameworks, MCP, and RAG for agentic AI
 ## Session labs 
-## Revision 1.17 - 11/06/25
+## Revision 1.18 - 11/06/25
 
 **Follow the startup instructions in the README.md file IF NOT ALREADY DONE!**
 
@@ -379,15 +379,23 @@ Tell me about the Southern office
 code -d ../extra/lab5-code.txt agent5.py
 ```
 
+<br>
+
+In the *agent5.py* template, we have the imports and llm setup at the top filled in, along with a simulated function to book a flight. At the bottom is the input and code to kick off the "*crew*". So, we need to fill in the different tasks and setup the crew.
+
+<br>
+
 ![Diffs](./images/aa23.png?raw=true "Diffs") 
 
-2. In the *agent5.py* template, we have the imports and llm setup at the top filled in, along with a simulated function to book a flight. Scroll to the bottom. At the bottom is the input and code to kick off the "*crew*". So, we need to fill in the different tasks and setup the crew.
+<br><br>
 
-3. Scroll back to the top, review each change and then merge each one in. Notice the occurrences of "*booking_agent*". This is all being done with a single agent in the crew currently. When done, the files should show no differences. Click on the "X" in the tab at the top to save your changes to *agent5.py*.
+2. Scroll back to the top, review each change and then merge each one in. Notice the occurrences of "*booking_agent*". This is all being done with a single agent in the crew currently. When done, the files should show no differences. Click on the "X" in the tab at the top to save your changes to *agent5.py*.
 
 ![Merge complete](./images/aa24.png?raw=true "Merge complete") 
 
-4. Now you can run the agent and see the larger workflow being handled. There will be quite a bit of output so this may take a while to run. **NOTE: Even though the agent may prompt for human input to select a flight, none is needed. We're not adding that in and using fake info to keep things simple and quick.**
+<br><br>
+
+3. Now you can run the agent and see the larger workflow being handled. There will be quite a bit of output so this may take a while to run. **NOTE: Even though the agent may prompt for human input to select a flight, none is needed. We're not adding that in and using fake info to keep things simple and quick.**
 
 ```
 python agent5.py
@@ -395,14 +403,17 @@ python agent5.py
 
 ![Execution](./images/aa31.png?raw=true "Execution") 
 
-5. Now, that we know how the code works and that it works, let's consider the overall approach. Since there are multiple functions going on here (getting info, finding flights, booking flights) it doesn't necessarily make sense to have just one agent doing all those things. Let's add two other agents - a *travel agent* to help with finding flights, and a customer_service_agent to help with user interactions. To start, open the code for editing.
+<br><br>
+
+4. Now, that we know how the code works and that it works, let's consider the overall approach. Since there are multiple functions going on here (getting info, finding flights, booking flights) it doesn't necessarily make sense to have just one agent doing all those things. Let's add two other agents - a *travel agent* to help with finding flights, and a customer_service_agent to help with user interactions. To start, open the code for editing.
 
 ```
 code agent5.py
 ```
 
+<br><br>
 
-6. Now, replace the single *booking agent* definition with these definitions for the 3 agents (making sure to get the indenting correct):
+5. Now, replace the single *booking agent* definition with these definitions for the 3 agents (making sure to get the indenting correct):
 
 
 **Directions:** Copy the block of replacement text in gray below and paste over the single agent definition in the code. Reminder - you may need to use keyboard shortcuts to copy and paste. The screenshots are only to show you before and after - they are not what you copy.
@@ -436,11 +447,16 @@ customer_service_agent = Agent(
     llm=ollama_llm,
 )
 ```
+
+<br>
+
 ![Text to replace](./images/aa26.png?raw=true "Text to replace") 
 
 ![Replaced text](./images/aa27.png?raw=true "Replaced text")
 
-7. Next, we'll change each *task definition* to reflect which agent should own it. The places to make the change are in the task definitions in the lines that start with "*agent=*". Just edit each one as needed per the mapping in the table below. The screenshot below the mappings shows what the changed code should look like.
+<br><br>
+
+6. Next, we'll change each *task definition* to reflect which agent should own it. The places to make the change are in the task definitions in the lines that start with "*agent=*". Just edit each one as needed per the mapping in the table below. The screenshot below the mappings shows what the changed code should look like.
 
 | **Task** | *Agent* | 
 | :--------- | :-------- | 
@@ -451,7 +467,9 @@ customer_service_agent = Agent(
          
 ![Replaced text](./images/aa28.png?raw=true "Replaced text")
 
-8. Finally, we need to add the new agents to our crew. Edit the "*agents=[*" line in the block under the comment "*# Create the crew*". In that line, add *customer_service_agent* and *travel_agent*. The full line is below. The screenshot shows the changes made.
+<br><br>
+
+7. Finally, we need to add the new agents to our crew. Edit the "*agents=[*" line in the block under the comment "*# Create the crew*". In that line, add *customer_service_agent* and *travel_agent*. The full line is below. The screenshot shows the changes made.
 
 ```
 agents=[booking_agent, customer_service_agent, travel_agent],
@@ -459,13 +477,17 @@ agents=[booking_agent, customer_service_agent, travel_agent],
 
 ![Replaced text](./images/aa29.png?raw=true "Replaced text")
 
-9. Now you can save your changes and then run the program again.
+<br><br>
+
+8. Now you can save your changes and then run the program again.
 
 ```
 python agent5.py
 ```
 
-10. This time when the code runs, you should see the different agents being used in the processing.
+<br><br>
+
+9. This time when the code runs, you should see the different agents being used in the processing.
 
 ![Run with new agents](./images/aa30.png?raw=true "Run with new agents")
 
