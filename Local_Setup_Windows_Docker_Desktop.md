@@ -1,15 +1,3 @@
-> tell me how I can run this ai-aip devcontainer locally instead of in a codespace 
-
-⏺ I'll help you understand how to run this devcontainer locally. Let me check the devcontainer configuration and any existing documentation.
-
-⏺ Read(.devcontainer/devcontainer.json)
-  ⎿  Read 42 lines
-
-⏺ Read(README.md)
-  ⎿  Read 77 lines
-
-⏺ Based on the devcontainer configuration, here's how to run this AI-AIP workshop environment locally:
-
   Prerequisites
 
   1. Install Docker Desktop
@@ -47,6 +35,6 @@
     - After container starts, Ollama should start automatically
     - If needed, manually run: ollama serve &
   6. Run the warmup script (recommended)
-  python scripts/warmup_comprehensive.py
+  python scripts/warmup.py
 
   That's it! You'll have the same environment as Codespaces but running locally on your machine.
