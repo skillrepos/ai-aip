@@ -1,7 +1,7 @@
 # Implementing AI Agents in Python
 ## Using frameworks, MCP, and RAG for agentic AI
 ## Session labs 
-## Revision 1.18 - 11/06/25
+## Revision 1.19 - 11/06/25
 
 **Follow the startup instructions in the README.md file IF NOT ALREADY DONE!**
 
@@ -528,9 +528,9 @@ python agent5.py
 code -d ../extra/reflect_agent.txt reflect_agent.py
 ```
 
-![Diffs](./images/aip11.png?raw=true "Diffs") 
+<br>
 
-2. This time you'll be merging in the following sections:
+This time you'll be merging in the following sections:
 
 - agent to write code
 - agent to review code
@@ -538,48 +538,71 @@ code -d ../extra/reflect_agent.txt reflect_agent.py
 - section to exec the code (note this only works if no additional imports are required)
 - workflow sections to drive the agents
 
-3. When you're done merging, close the tab as usual to save your changes. Now, in a terminal, run the agent with the command below:
+<br> 
+
+![Diffs](./images/aip11.png?raw=true "Diffs") 
+
+<br><br>
+
+2. When you're done merging, close the tab as usual to save your changes. Now, in a terminal, run the agent with the command below:
 
 ```
 python reflect_agent.py
 ```
 
-4. After the agent starts, you'll be at a prompt that says "Request >". This is waiting for you to input a programming request. Let's start with something simple like the prompt below. Just type this in and hit Enter.
+<br><br>
+
+3. After the agent starts, you'll be at a prompt that says "Request >". This is waiting for you to input a programming request. Let's start with something simple like the prompt below. Just type this in and hit Enter.
 
 ```
 determine if a number is prime or not
 ```
 
+<br>
+
 ![Simple task](./images/aip6.png?raw=true "Simple task")
 
-5. After this, you should see a "Generating code..." message indicating the coding agent is generating code. Then you'll see the suggested code.
+<br><br>
+
+4. After this, you should see a "Generating code..." message indicating the coding agent is generating code. Then you'll see the suggested code.
 
 ![Suggested code](./images/aip7.png?raw=true "Suggested code")
 
-6. Next, you'll see where the agent tried to run the code and provides "Runtime Feedback" indicating whether or not it executed successfully. That's followed by the "Critique" and the PASS/FAIL verdict.
+<br><br>
+
+5. Next, you'll see where the agent tried to run the code and provides "Runtime Feedback" indicating whether or not it executed successfully. That's followed by the "Critique" and the PASS/FAIL verdict.
 
 ![Code evaluation](./images/aip8.png?raw=true "Code evaluation")
+
+<br><br>
  
-7. This one probably passed on the first round. The agent will be ready for another task. Let's see what it's like when there's an error. Try the following prompt:
+6. This one probably passed on the first round. The agent will be ready for another task. Let's see what it's like when there's an error. Try the following prompt:
 
 ```
 Determine if a number is prime or not, but inject an error. Do not include a comment about the error.
 ```
 
-8. After this runs, and the initial code is generated, you should see the "Critique" section noting this as a "FAIL". The agent will then attempt to automatically fix the code and suggest "Fixed Code". Then it will attempt to execute the fixed code it generated. If all goes well, you'll see a message after that indicating that the fixed code was "Executed successfully."
+<br><br>
+
+7. After this runs, and the initial code is generated, you should see the "Critique" section noting this as a "FAIL". The agent will then attempt to automatically fix the code and suggest "Fixed Code". Then it will attempt to execute the fixed code it generated. If all goes well, you'll see a message after that indicating that the fixed code was "Executed successfully."
 
 ![Fix run](./images/aip9.png?raw=true "Fix run")
 
-9. Let's try one more change. Use "*exit*" to stop the current agent. We have a version of the code that has some extra functionality built-in to stream output, print system_messages, show when an agent is running, etc. It's in the "extra" directory, under "reflect_agent_verbose.py". Go ahead and run that and try a prompt with it. You can try the same prompt as in step 7 if you want. (You can type "exit" to stop the running one.)
+<br><br>
+
+8. Let's try one more change. Use "*exit*" to stop the current agent. We have a version of the code that has some extra functionality built-in to stream output, print system_messages, show when an agent is running, etc. It's in the "extra" directory, under "reflect_agent_verbose.py". Go ahead and run that and try a prompt with it. You can try the same prompt as in step 7 if you want. (You can type "exit" to stop the running one.)
 
 ```
 python ../extra/reflect_agent_verbose.py
 ```
 
+<br>
+
 ![Verbose run](./images/aip10.png?raw=true "Verbose run")
 
+<br><br>
 
-10. (Optional) After this you can try other queries with the original file or the verbose one if you want. Or you can try changing some of the system messages in the code and re-running it if you like to try a larger change.
+9. (Optional) After this you can try other queries with the original file or the verbose one if you want. Or you can try changing some of the system messages in the code and re-running it if you like to try a larger change.
 
 
 <p align="center">
