@@ -690,7 +690,7 @@ python -m pytest test_agent_reasoning.py::test_tool_failure_recovery -v -s
 python -m pytest test_agent_reasoning.py::test_real_agent_tool_selection -v -s
 ```
 
-This will (~2-3 min):
+This will do the following: (running time: ~2-3 min):
 - Give agent: "What's 25 times 4 and what's the weather in Tokyo?"
 - Test that agent correctly identifies TWO tasks
 - Test that agent calls BOTH tools (calculator AND weather)
@@ -855,11 +855,11 @@ code -d ../extra/secure_agent.txt secure_agent.py
 python secure_agent.py
 ```
 
-12. **TEST 1 - Legitimate Use**: Enter a normal math query (or press ENTER for default).
+12. **TEST 1 - Legitimate Use**: Enter a normal math query, like in step 4 (or press ENTER for default).
    - The secure agent processes it normally
    - Demonstrates the agent works for legitimate requests
 
-13. **TEST 2 - Attack Attempt**: Try the SAME attack prompts you used before (or press ENTER for default).
+13. **TEST 2 - Attack Attempt**: Try the SAME attack prompts you used before - from step 5 (or press ENTER for default).
 
    Watch what happens:
    - **Input validation** catches suspicious patterns BEFORE reaching the LLM (instant, free!)
