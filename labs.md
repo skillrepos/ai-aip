@@ -1,7 +1,7 @@
 # Implementing AI Agents in Python
 ## Using frameworks, MCP, and RAG for agentic AI
 ## Session labs 
-## Revision 1.21 - 11/06/25
+## Revision 1.22 - 12/23/25
 
 **Follow the startup instructions in the README.md file IF NOT ALREADY DONE!**
 
@@ -256,8 +256,8 @@ Convert 400 to JPY
 Convert 200
 ```
 
-![Running with partial inputs](./images/aa70.png?raw=true "Running agent")  
-![Running with partial inputs](./images/aa71.png?raw=true "Running agent")   
+![Running with partial inputs](./images/aip34.png?raw=true "Running agent")  
+
 
 <br><br>
 
