@@ -252,8 +252,8 @@ Convert 100 USD to EUR
 6. Now you can try some partial inputs with missing values to demonstrate the agent remembering arguments that were passed to it before. Here are some to try. Output is shown in the screenshot. (You may see some intermediate steps. You're looking for the one with "Final answer" in it.)
 
 ```
-Convert 200
 Convert 400 to JPY
+Convert 200
 ```
 
 ![Running with partial inputs](./images/aa70.png?raw=true "Running agent")  
