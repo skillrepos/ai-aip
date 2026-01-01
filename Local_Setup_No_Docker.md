@@ -1,4 +1,4 @@
-# Local Environment Setup (No Codespaces) 
+# Local Environment Setup (No containers or VS Code) 
 **Not guaranteed to work on all systems/setup - recommended environment is GitHub Codespace as described in README.md**
 
 This guide explains how to run the **Implementing AI Agents in Python** labs from this repository **without GitHub Codespaces**. It mirrors the key parts of the dev container so you can work locally on macOS, Linux, or Windows.
