@@ -10,6 +10,8 @@ source ./$PYTHON_ENV/bin/activate
 
 if [ -f "./requirements.txt" ]; then
   pip3 install -r "./requirements.txt"
+elif [ -f "./requirements/requirements.txt" ]; then
+  pip3 install -r "./requirements/requirements.txt"
 else
   pip3 install -r "/workspaces/ai-aip/requirements/requirements.txt"
 fi
