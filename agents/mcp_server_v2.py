@@ -74,7 +74,7 @@ mcp = FastMCP("WeatherServer")
 # ─── Weather Tool ────────────────────────────────────────────────────
 
 @mcp.tool
-
+def get_weather(lat: float, lon: float) -> dict:
     """
     Fetch **current weather** from Open-Meteo and return a concise dict.
 
@@ -92,8 +92,18 @@ mcp = FastMCP("WeatherServer")
 
     Returns
     -------
-   
-
+    dict
+        {
+            "temperature": <float °C>,
+            "code":        <int WMO weathercode>,
+            "conditions":  <friendly description>,
+            "error":       <error message if request failed>
+        }
+    """
+    url = (
+        "https://api.open-meteo.com/v1/forecast"
+        f"?latitude={lat}&longitude={lon}&current_weather=true"
+    )
 
     last_error = None
 
@@ -114,7 +124,14 @@ mcp = FastMCP("WeatherServer")
 
             resp.raise_for_status()
 
-
+            # Extract and return weather data
+            cw = resp.json()["current_weather"]
+            code = cw["weathercode"]
+            return {
+                "temperature": cw["temperature"],
+                "code":        code,
+                "conditions":  WEATHER_CODES.get(code, "Unknown"),
+            }
 
         except requests.HTTPError as e:
             # HTTP errors (4xx, 5xx not already caught)
@@ -145,7 +162,9 @@ mcp = FastMCP("WeatherServer")
 # ─── Temperature Conversion Tool ─────────────────────────────────────
 
 @mcp.tool
-
+def convert_c_to_f(c: float) -> float:
+    """Simple Celsius → Fahrenheit conversion."""
+    return c * 9 / 5 + 32
 
 
 # ─── Geocoding Tool ──────────────────────────────────────────────────
@@ -169,7 +188,16 @@ def geocode_location(name: str) -> dict:
 
     Returns
     -------
-
+    dict
+        {
+            "latitude": <float>,
+            "longitude": <float>,
+            "name": <matched location name>,
+            "error": <error message if request failed>
+        }
+    """
+    url = "https://geocoding-api.open-meteo.com/v1/search"
+    last_error = None
 
     # Retry loop with fresh connections
     for attempt in range(MAX_RETRIES):
@@ -234,3 +262,9 @@ def geocode_location(name: str) -> dict:
 if __name__ == "__main__":
     # Start HTTP server using FastAPI + Uvicorn
     # Clients connect to: http://127.0.0.1:8000/mcp/
+    mcp.run(
+        transport="http",
+        host="127.0.0.1",
+        port=8000,
+        path="/mcp/",
+    )
