@@ -100,7 +100,7 @@ If you see "Docker is not running" errors:
 ### Ollama Models Not Downloaded
 If models are missing:
 ```bash
-ollama pull llama3.2:3b
+ollama pull llama3.2:latest
 ollama pull nomic-embed-text
 ```
 
