@@ -717,6 +717,8 @@ Look at `test_real_agent_tool_selection()` - it checks:
 - Did agent sequence tool calls correctly?
 - Did agent synthesize results?
 
+<br><br>
+
 10. After completion, review the key insight: We tested AGENT BEHAVIOR (reasoning, tool selection, error handling) not just code correctness. This is agentic testing.
 
 <br><br>
@@ -854,12 +856,18 @@ code -d ../extra/secure_agent.txt secure_agent.py
    - System prompt hardening: Explicit resistance instructions
    - Security logging: Track attack attempts
 
+<br><br>
+
 10. Merge the changes section by section, paying attention to the defense-in-depth strategy with 5 security layers.
+
+<br><br>
 
 11. Now run the secure agent:
 ```
 python secure_agent.py
 ```
+
+<br><br>
 
 12. **TEST 1 - Legitimate Use**: Enter a normal math query, like in step 4 (or press ENTER for default).
    - The secure agent processes it normally
