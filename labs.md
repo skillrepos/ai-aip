@@ -1,7 +1,7 @@
 # Implementing AI Agents in Python
 ## Using frameworks, MCP, and RAG for agentic AI
 ## Session labs 
-## Revision 1.25 - 03/19/26
+## Revision 1.3 - 03/19/26
 
 **Follow the startup instructions in the README.md file IF NOT ALREADY DONE!**
 
@@ -79,13 +79,17 @@ python agent1.py
 
 <br><br>
 
-9. You can then input another location and run the agent again or exit. Note that the API may be limiting the number of accesses in a short period of time. So you may occasionally see it noting a retry. When done, just enter "exit".
+9. You can then input another location and run the agent again or exit. Note that the API may be limiting the number of accesses in a short period of time. So you may occasionally see it noting a retry.
 
 <br><br>
 
 10. Try putting in *Sydney, Australia* and then check the output against the weather forecast on the web. Why do you think it doesn't match? How would you fix it?
 
 Here's a clue: "If latitude/longitude is in the Southern or Western hemisphere, use negative values as appropriate"
+
+<br><br>
+
+11.  When done running the agent, just enter "exit".
 
 <p align="center">
 **[END OF LAB]**
