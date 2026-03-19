@@ -1,6 +1,9 @@
 {
    // "build": { "dockerfile": "Dockerfile" },
     "image": "mcr.microsoft.com/devcontainers/base:bookworm",
+    "remoteEnv": {
+        "OLLAMA_MODEL": "llama3.2:3b"
+    },
     "hostRequirements": {
        "cpus": 4,
        "memory": "16gb",
@@ -19,7 +22,7 @@
         "vscode": {
             "settings": {
                 "python.terminal.activateEnvInCurrentTerminal": true,
-                "python.defaultInterpreterPath": ".venv/bin/python",
+                "python.defaultInterpreterPath": "${containerWorkspaceFolder}/py_env/bin/python",
                 "github.copilot.editor.enable": false, // Disables Copilot globally
                 "github.copilot.editor.enableAutoCompletions": false, // Disables inline suggestions
                 "github.copilot.chat.enabled": false, // Disables Copilot Chat
