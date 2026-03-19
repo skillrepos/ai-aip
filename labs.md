@@ -5,6 +5,12 @@
 
 **Follow the startup instructions in the README.md file IF NOT ALREADY DONE!**
 
+**If you have to restart your codespace, for best performance, you may want to run the warmup command again.** If you get any failures during that, try running it again.
+
+```
+python scripts/warmup.py --embed --keep-alive 300m --auto-pull &
+```
+
 **NOTE: To copy and paste in the codespace, you may need to use keyboard commands - CTRL-C and CTRL-V. Chrome may work best for this.**
 
 **Lab 1 - Creating a simple agent**
