@@ -41,8 +41,10 @@ The codespace is ready to use when you see a prompt like the one shown below in 
 **4. Run the *warm-up* script for faster LLM interactions.**
 
 ```
-python scripts/warmup.py --embed --keep-alive 300m --auto-pull
+python scripts/warmup.py --embed --keep-alive 300m --auto-pull &
 ```
+
+(If you happen to hit an error where the script gets interrupted, just run it again.)
 
 ![Run warmup script](./images/aip22.png?raw=true "Run warmup script")
 
