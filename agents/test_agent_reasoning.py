@@ -326,7 +326,7 @@ def test_real_agent_tool_selection():
     print()
 
 
-    model = os.getenv("OLLAMA_MODEL", "ollama/llama3.2:latest")
+    model = "ollama/" + os.getenv("OLLAMA_MODEL", "llama3.2:latest")
 
     llm = LiteLLMModel(
         model_id=model,
@@ -417,7 +417,7 @@ def test_real_agent_currency_conversion():
     print("Using REAL currency exchange API!")
     print()
 
-    model = os.getenv("OLLAMA_MODEL", "ollama/llama3.2:latest")
+    model = "ollama/" + os.getenv("OLLAMA_MODEL", "llama3.2:latest")
 
     llm = LiteLLMModel(
         model_id=model,
@@ -486,7 +486,7 @@ def test_real_agent_error_recovery():
     print("🧪 REAL AGENT TEST - Error handling")
     print("="*60)
 
-    model = os.getenv("OLLAMA_MODEL", "ollama/llama3.2:latest")
+    model = "ollama/" + os.getenv("OLLAMA_MODEL", "llama3.2:latest")
 
     llm = LiteLLMModel(
         model_id=model,

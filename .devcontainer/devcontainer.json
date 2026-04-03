@@ -1,14 +1,15 @@
 {
    // "build": { "dockerfile": "Dockerfile" },
     "image": "mcr.microsoft.com/devcontainers/base:bookworm",
+    "remoteEnv": {
+        "OLLAMA_MODEL": "llama3.2:3b"
+    },
     "hostRequirements": {
        "cpus": 4,
        "memory": "16gb",
        "storage": "32gb"
     },
     "features": {
-       "ghcr.io/devcontainers/features/docker-from-docker:1": {},
-       "ghcr.io/devcontainers/features/github-cli:1": {},
        "ghcr.io/devcontainers/features/python:1": {},
        "node": {
                "version": "lts",
@@ -19,7 +20,7 @@
         "vscode": {
             "settings": {
                 "python.terminal.activateEnvInCurrentTerminal": true,
-                "python.defaultInterpreterPath": ".venv/bin/python",
+                "python.defaultInterpreterPath": "${containerWorkspaceFolder}/py_env/bin/python",
                 "github.copilot.editor.enable": false, // Disables Copilot globally
                 "github.copilot.editor.enableAutoCompletions": false, // Disables inline suggestions
                 "github.copilot.chat.enabled": false, // Disables Copilot Chat
