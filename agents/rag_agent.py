@@ -126,10 +126,50 @@ def calculate_distance_tool(starting_loc, destination_query):
 
 # --- RAG Functions ---
 # --- Search the vector database to find relevant snippets
+def search_vector_db(query):
+    """Search ChromaDB for relevant document snippets"""
+    print(f"\n{RED}RAG Search Query:{RESET} '{query}'")
+    results = collection.query(query_texts=[query], n_results=2)
+    snippets = results["documents"][0] if results["documents"] else []
+    
+    if snippets:
+        print(f"{RED}RAG Retrieved Snippets:{RESET}")
+        for idx, snippet in enumerate(snippets, 1):
+            print(f"{RED}{BOLD}{idx}. {snippet}{RESET}")
+    else:
+        print(f"{RED}No relevant snippets found in documents{RESET}")
+    
+    return snippets
 
 # --- See if we can pull a city from the RAG results ---
+def extract_city_from_rag(snippets):
+    """Try to extract city names from RAG results"""
+    KNOWN_CITIES = ["New York", "San Francisco", "Chicago", "Austin", "Boston",
+                    "London", "Toronto", "Tokyo", "Sydney", "Berlin"]
+    
+    for snippet in snippets:
+        for city in KNOWN_CITIES:
+            if city.lower() in snippet.lower():
+                print(f"{GREEN}RAG detected city: {city}{RESET}")
+                return city
+    return None
 
 # --- As a fallback, try to pull a city via the LLM ---
+def fallback_detect_city_with_llm(text):
+    """Use LLM as fallback for city detection"""
+    print(f"{YELLOW}Using LLM fallback for city detection{RESET}")
+    messages = [
+        {"role": "system", "content": "Identify ONLY the city name mentioned in the query. Reply ONLY with the city name."},
+        {"role": "user", "content": text}
+    ]
+    completion = client.chat.completions.create(
+        model="llama3.2",
+        messages=messages
+    )
+    raw = completion.choices[0].message.content
+    city = raw.strip()
+    print(f"{GREEN}LLM detected city: {city}{RESET}")
+    return city
 
 # --- Prompt and Response Generation ---
 def get_city_facts(location_name):
@@ -160,6 +200,23 @@ def format_final_output(location_name, office_facts, city_facts, distance_info, 
     return output
 
 # --- Document Indexing ---
+print("\nLoading and indexing PDF into ChromaDB...")
+pdf_text = ""
+with pdfplumber.open("../data/offices.pdf") as pdf:
+    for page in pdf.pages:
+        pdf_text += page.extract_text() + "\n"
+
+model = SentenceTransformer('sentence-transformers/all-mpnet-base-v2')
+chroma_client = chromadb.Client()
+collection = chroma_client.get_or_create_collection(
+    name="office_docs",
+    embedding_function=embedding_functions.SentenceTransformerEmbeddingFunction(model_name="all-MiniLM-L6-v2")
+)
+
+docs = [line.strip() for line in pdf_text.split('\n') if len(line.strip()) > 20]
+ids = [f"doc_{i}" for i in range(len(docs))]
+collection.add(documents=docs, ids=ids)
+print(f"{GREEN}Indexed {len(docs)} office documents.{RESET}")
 
 # --- Main Interaction Loop ---
 if __name__ == "__main__":
@@ -176,8 +233,10 @@ if __name__ == "__main__":
             break
 
         # RAG Document Search
+        rag_snippets = search_vector_db(user_input)
         
         # City Detection Workflow
+        detected_city = extract_city_from_rag(rag_snippets)
         if not detected_city:
             detected_city = fallback_detect_city_with_llm(user_input)
         
@@ -186,6 +245,9 @@ if __name__ == "__main__":
             continue
 
         # Prepare Office Facts
+        office_facts = [snippet for snippet in rag_snippets if detected_city.lower() in snippet.lower()]
+        if not office_facts:
+            office_facts = ["No specific office information found in documents"]
         
         # Prepare City Facts
         city_facts_text = get_city_facts(detected_city)
