@@ -1,0 +1,344 @@
+#!/usr/bin/env python3
+"""
+Lab 4 - Agentic RAG (TRUE, model-driven via native tool-calling)
+================================================================
+The MODEL drives the loop. Using the model's native TOOL-CALLING, it decides
+which tools to call (with real JSON arguments), retrieves as many times as it
+needs, and a validation gate checks the answer is grounded before finishing.
+
+You build this file with the diff/merge step in the lab. FOUR sections are
+merged in - each is marked below with a ">>>>> MERGE SECTION N" banner:
+  1. The tools the agent can call (+ a RAG grounding helper)
+  2. The tool schemas (what enables native tool-calling) + the system prompt
+  3. The self-check / validation gate
+  4. The agent loop (model decides -> calls tools -> observes -> validates)
+
+WATCH THE RUN: lines tagged [AGENT], [RAG], [GROUND], and [SELF-CHECK] show the
+agent's decisions, retrievals, grounding checks, retries, and validation live.
+
+Model provider:
+  Default is local Ollama (llama3.2). For TRUE, reliable agentic RAG, use a
+  hosted 8B by creating a free key at console.groq.com and running:
+      export AGENT_PROVIDER=groq
+      export GROQ_API_KEY=<your-key>
+"""
+
+import os
+import re
+import json
+import math
+import requests
+from openai import OpenAI
+import chromadb
+import pdfplumber
+from chromadb.utils import embedding_functions
+
+_E = chr(27)
+GREEN, CYAN, YELLOW, RED, BLUE, BOLD, RESET = (
+    _E + "[92m", _E + "[96m", _E + "[93m", _E + "[91m", _E + "[94m", _E + "[1m", _E + "[0m")
+
+STARTING_LOC_FILE = "user_starting_location.json"
+DEFAULT_LOCATION = {"city": "Raleigh, NC", "lat": 35.7796, "lon": -78.6382}
+
+# --- Model provider toggle (default local Ollama; AGENT_PROVIDER=groq for Groq) ---
+PROVIDER = os.environ.get("AGENT_PROVIDER", "ollama").lower()
+if PROVIDER == "groq":
+    client = OpenAI(base_url="https://api.groq.com/openai/v1",
+                    api_key=os.environ.get("GROQ_API_KEY", "MISSING_GROQ_API_KEY"))
+    MODEL = os.environ.get("AGENT_MODEL", "llama-3.1-8b-instant")
+else:
+    client = OpenAI(base_url="http://localhost:11434/v1", api_key="ollama")
+    MODEL = os.environ.get("AGENT_MODEL", "llama3.2")
+print(f"{BOLD}{CYAN}[AGENT] provider={PROVIDER}  model={MODEL}{RESET}")
+
+
+# --- Given helpers (already in the skeleton): live geocoding + distance math ---
+def geocode_location(q):
+    try:
+        r = requests.get(
+            f"https://nominatim.openstreetmap.org/search?q={q}&format=json",
+            headers={"User-Agent": "TravelAssistant/1.0"}, timeout=15)
+        g = r.json()
+        if g:
+            return float(g[0]["lat"]), float(g[0]["lon"])
+    except Exception as e:
+        print(f"{RED}[geocode] error: {e}{RESET}")
+    return None, None
+
+
+def haversine_miles(a, b, c, d):
+    R = 3958.8
+    dlat, dlon = math.radians(c - a), math.radians(d - b)
+    h = (math.sin(dlat / 2) ** 2
+         + math.cos(math.radians(a)) * math.cos(math.radians(c)) * math.sin(dlon / 2) ** 2)
+    return R * 2 * math.atan2(math.sqrt(h), math.sqrt(1 - h))
+
+
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+# >>>>> MERGE SECTION 1: THE TOOLS THE AGENT CAN CALL (+ grounding helper) <<<<<
+#   search_documents : RAG retrieval; the agent may call it again with a better
+#                      query (this is the "adapt retrieval" behavior).
+#   _resolve_place   : RAG GROUNDING CHECK - resolves an office name to its real
+#                      city from the retrieved docs (e.g. "HQ" -> "New York"),
+#                      or reports not_found instead of inventing one.
+#   distance_to      : miles from the user's start to an office/city.
+#   city_facts       : three facts about a city (LLM generation).
+#   DISPATCH         : maps a tool name the model emits -> the python function.
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+def tool_search_documents(args, state):
+    q = args.get("query", "")
+    res = collection.query(query_texts=[q], n_results=3)
+    snips = res["documents"][0] if res["documents"] else []
+    for s in snips:
+        if s not in state["retrieved"]:
+            state["retrieved"].append(s)
+    print(f"{YELLOW}    [RAG] retrieved {len(snips)} snippet(s) for query {q!r}{RESET}")
+    return {"query": q, "snippets": snips}
+
+
+def _resolve_place(place, state):
+    """RAG grounding check: match an office name to a retrieved office line and
+    pull its real city, or report not_found. Never geocodes a raw label blindly."""
+    res = collection.query(query_texts=[place], n_results=3)
+    snips = res["documents"][0] if res["documents"] else []
+    for s in snips:
+        if s not in state["retrieved"]:
+            state["retrieved"].append(s)
+    pl = place.lower()
+    is_office_ref = any(k in pl for k in ("office", "hq", "headquarter"))
+    stop = {"office", "the", "of", "city", "to", "me", "location"}
+    words = [w for w in re.findall(r"[a-z]+", pl) if w not in stop and len(w) >= 2]
+    for s in snips:
+        toks = set(re.findall(r"[a-z]+", s.lower()))
+        if any(w in toks for w in words):
+            parts = s.split(",")
+            if len(parts) >= 2:
+                print(f"{YELLOW}    [GROUND] {place!r} -> matched office {parts[0].strip()!r} in {parts[1].strip()!r}{RESET}")
+                return {"status": "resolved", "office": parts[0].strip(), "city": parts[1].strip()}
+    if is_office_ref:
+        avail = [f"{p[0].strip()} -> {p[1].strip()}"
+                 for p in (s.split(",") for s in snips) if len(p) >= 2]
+        print(f"{RED}    [GROUND] {place!r} -> NOT FOUND in the documents{RESET}")
+        return {"status": "not_found", "requested": place, "available_offices": avail}
+    print(f"{YELLOW}    [GROUND] {place!r} -> treated as a plain place name{RESET}")
+    return {"status": "city", "city": place}
+
+
+def tool_distance_to(args, state):
+    place = args.get("destination") or args.get("office") or args.get("city") or ""
+    r = _resolve_place(place, state)
+    if r["status"] == "not_found":
+        return {"error": f"no office matching '{place}'", "available_offices": r["available_offices"]}
+    city = r["city"]
+    lat, lon = geocode_location(city)
+    if lat is None:
+        return {"error": f"could not geocode {city}"}
+    miles = round(haversine_miles(state["start"]["lat"], state["start"]["lon"], lat, lon), 2)
+    out = {"requested": place, "city": city, "distance_miles": miles, "from": state["start"]["city"]}
+    if r["status"] == "resolved":
+        out["resolved_office"] = r["office"]
+    return out
+
+
+def tool_city_facts(args, state):
+    place = args.get("city") or args.get("office") or ""
+    r = _resolve_place(place, state)
+    if r["status"] == "not_found":
+        return {"error": f"no office matching '{place}'", "available_offices": r["available_offices"]}
+    city = r["city"]
+    msg = [
+        {"role": "system", "content": "Give exactly 3 short facts about the city, one per line starting with '-'."},
+        {"role": "user", "content": f"Three facts about {city}."},
+    ]
+    out = client.chat.completions.create(model=MODEL, messages=msg).choices[0].message.content
+    facts = [l.lstrip("- ").strip() for l in out.splitlines() if l.strip().startswith("-")][:3]
+    return {"requested": place, "city": city, "facts": facts}
+
+
+DISPATCH = {
+    "search_documents": tool_search_documents,
+    "distance_to": tool_distance_to,
+    "city_facts": tool_city_facts,
+}
+# >>>>> END MERGE SECTION 1 <<<<<
+
+
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+# >>>>> MERGE SECTION 2: TOOL SCHEMAS (enable native tool-calling) + SYSTEM <<<<<
+#   TOOLS_SCHEMA : JSON function schemas passed to the model via tools=...; this
+#                  is what makes the model return structured, reliable tool calls.
+#   SYSTEM       : tells the model to retrieve first, decompose multi-part
+#                  questions, and only answer when grounded (else decline).
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+TOOLS_SCHEMA = [
+    {"type": "function", "function": {
+        "name": "search_documents",
+        "description": "Retrieve relevant office-document snippets. Call first, and again with a better query if the snippets lack what you need.",
+        "parameters": {"type": "object", "properties": {"query": {"type": "string"}}, "required": ["query"]}}},
+    {"type": "function", "function": {
+        "name": "distance_to",
+        "description": "Miles from the user's starting location to a place or office city.",
+        "parameters": {"type": "object", "properties": {"destination": {"type": "string"}}, "required": ["destination"]}}},
+    {"type": "function", "function": {
+        "name": "city_facts",
+        "description": "Three interesting facts about a city.",
+        "parameters": {"type": "object", "properties": {"city": {"type": "string"}}, "required": ["city"]}}},
+]
+
+SYSTEM = (
+    "You are an Agentic RAG travel assistant. Answer questions about company offices "
+    "using ONLY information from the office documents. "
+    "ALWAYS call search_documents FIRST to see which offices exist and their cities. "
+    "Then use distance_to / city_facts with the office or city names. The tools ground "
+    "an office name to its real city via the documents; if an office is not in the data "
+    'they return {"error": ..., "available_offices": [...]}. If you get that error, tell the '
+    "user that office does not exist and list the offices that DO exist - do NOT guess or "
+    "invent one, and do NOT compute distances for it. "
+    "Decompose multi-part questions: comparing two offices needs distance_to for BOTH. "
+    "When done, write a normal-text final answer with no tool call.")
+# >>>>> END MERGE SECTION 2 <<<<<
+
+
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+# >>>>> MERGE SECTION 3: SELF-CHECK / VALIDATION GATE <<<<<
+#   validate_answer : an LLM "critic" that checks the draft answer is grounded in
+#                     the retrieved snippets and answers the question. Returns
+#                     {"complete": bool, "missing": str}. This is the gate that
+#                     decides whether the agent can finish or must keep going.
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+def validate_answer(user_query, answer, state):
+    ctx = chr(10).join(f"- {s}" for s in state["retrieved"]) or "(none)"
+    rules = (
+        "You are a validator. complete=true if the DRAFT reasonably answers the QUESTION using the SNIPPETS. "
+        "Only complete=false if it omits a part the user explicitly asked for, or makes an office claim not in "
+        'the SNIPPETS. Do not nitpick wording. Reply JSON only: {"complete": true/false, "missing": "<short>"}')
+    uc = chr(10).join(["QUESTION:", user_query, "", "SNIPPETS:", ctx, "", "DRAFT:", answer])
+    raw = client.chat.completions.create(
+        model=MODEL, messages=[{"role": "system", "content": rules}, {"role": "user", "content": uc}],
+        temperature=0).choices[0].message.content
+    a, b = raw.find("{"), raw.rfind("}")
+    try:
+        verdict = json.loads(raw[a:b + 1]) if a != -1 and b != -1 else {"complete": True, "missing": ""}
+    except Exception:
+        verdict = {"complete": True, "missing": ""}
+    print(f"{GREEN}    [SELF-CHECK] verdict: complete={verdict.get('complete')} missing={verdict.get('missing','')!r}{RESET}")
+    return verdict
+# >>>>> END MERGE SECTION 3 <<<<<
+
+
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+# >>>>> MERGE SECTION 4: THE AGENT LOOP (the model drives this) <<<<<
+#   run_agent : each turn, the MODEL decides what to do - call tools or answer.
+#     - tool_calls present  -> run each tool, feed results back, loop (the agent
+#                              is gathering what it needs / decomposing the task)
+#     - no tool_calls       -> candidate final answer -> run the SELF-CHECK; if
+#                              not grounded, tell it what's missing and loop;
+#                              else print the FINAL ANSWER. max_steps is the
+#                              safety cap so the loop can never run forever.
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+def run_agent(user_query, start, max_steps=12, max_revalidations=2):
+    state = {"start": start, "retrieved": []}
+    messages = [
+        {"role": "system", "content": SYSTEM},
+        {"role": "user", "content": f"My starting location is {start['city']}. {user_query}"},
+    ]
+    reval = 0
+    print()
+    print(f"{BOLD}{'=' * 66}{RESET}")
+    print(f"{BOLD}AGENTIC RAG AGENT - the MODEL decides each step (native tool-calling){RESET}")
+    print(f"{BOLD}{'=' * 66}{RESET}")
+    for step in range(1, max_steps + 1):
+        print()
+        print(f"{BOLD}{CYAN}[AGENT] step {step}: asking the model what to do next...{RESET}")
+        resp = client.chat.completions.create(
+            model=MODEL, messages=messages, tools=TOOLS_SCHEMA, temperature=0)
+        m = resp.choices[0].message
+        if m.content and m.content.strip():
+            print(f"{CYAN}    [AGENT reasoning] {m.content.strip()[:200]}{RESET}")
+        if m.tool_calls:
+            messages.append({"role": "assistant", "content": m.content or "",
+                             "tool_calls": [{"id": tc.id, "type": "function",
+                                             "function": {"name": tc.function.name,
+                                                          "arguments": tc.function.arguments}}
+                                            for tc in m.tool_calls]})
+            for tc in m.tool_calls:
+                name = tc.function.name
+                try:
+                    targs = json.loads(tc.function.arguments or "{}")
+                except Exception:
+                    targs = {}
+                print(f"{BOLD}{CYAN}    [AGENT decision] call tool: {name}({json.dumps(targs)}){RESET}")
+                result = DISPATCH[name](targs, state) if name in DISPATCH else {"error": f"unknown tool {name}"}
+                print(f"{YELLOW}    [observation] {json.dumps(result)[:280]}{RESET}")
+                messages.append({"role": "tool", "tool_call_id": tc.id, "content": json.dumps(result)})
+            continue
+        # No tool call -> the model offered a final answer. Gate it with the self-check.
+        answer = m.content or ""
+        print(f"{BOLD}{GREEN}[SELF-CHECK] model proposed a final answer - validating it is grounded...{RESET}")
+        v = validate_answer(user_query, answer, state)
+        if v.get("complete") or reval >= max_revalidations:
+            tag = "grounded / validated" if v.get("complete") else "max retries reached"
+            print(f"{BOLD}{GREEN}[SELF-CHECK] accepted ({tag}){RESET}")
+            print(f"{BOLD}{'=' * 66}{RESET}")
+            print(f"{BOLD}{BLUE}FINAL ANSWER:{RESET}")
+            print(f"{BLUE}{answer}{RESET}")
+            print(f"{BOLD}{'=' * 66}{RESET}")
+            return
+        reval += 1
+        print(f"{RED}[SELF-CHECK] not complete: {v.get('missing', '')} -> agent will gather more and retry ({reval}/{max_revalidations}){RESET}")
+        messages.append({"role": "assistant", "content": answer})
+        messages.append({"role": "user", "content":
+                         f"Your answer is missing: {v.get('missing', '')}. Use the tools to gather it, then give the full answer."})
+    print(f"{RED}[AGENT] reached max steps without a validated answer.{RESET}")
+# >>>>> END MERGE SECTION 4 <<<<<
+
+
+# --- Given (already in the skeleton): starting-location helpers ---
+def load_starting_location():
+    if os.path.exists(STARTING_LOC_FILE):
+        try:
+            with open(STARTING_LOC_FILE) as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return DEFAULT_LOCATION
+
+
+def set_starting_location_interactively():
+    cur = load_starting_location()
+    print(f"{CYAN}Current starting location: {cur['city']}{RESET}")
+    if input("Change your starting location? (y/n): ").strip().lower() == "y":
+        c = input("Enter new starting city: ").strip()
+        lat, lon = geocode_location(c)
+        if lat is not None:
+            cur = {"city": c, "lat": lat, "lon": lon}
+            with open(STARTING_LOC_FILE, "w") as f:
+                json.dump(cur, f)
+    return cur
+
+
+# --- Given (already in the skeleton): index the office PDF into ChromaDB ---
+print("Loading and indexing PDF into ChromaDB...")
+pdf_text = ""
+with pdfplumber.open("../data/offices.pdf") as pdf:
+    for page in pdf.pages:
+        pdf_text += (page.extract_text() or "") + chr(10)
+chroma_client = chromadb.Client()
+collection = chroma_client.get_or_create_collection(
+    name="office_docs_agentic",
+    embedding_function=embedding_functions.SentenceTransformerEmbeddingFunction(model_name="all-MiniLM-L6-v2"))
+docs = [ln.strip() for ln in pdf_text.split(chr(10)) if len(ln.strip()) > 20]
+collection.add(documents=docs, ids=[f"doc_{i}" for i in range(len(docs))])
+print(f"{GREEN}Indexed {len(docs)} office documents.{RESET}")
+
+
+if __name__ == "__main__":
+    start = set_starting_location_interactively()
+    print("Agentic Travel Assistant ready! (Type 'exit' to quit)")
+    print("Try: 'Tell me about HQ'  or  'Which is closer to me, HQ or the Eastern office?'")
+    while True:
+        q = input(f"{BOLD}User:{RESET} ").strip()
+        if q.lower() in ("exit", "quit"):
+            print("Goodbye!")
+            break
+        run_agent(q, start)

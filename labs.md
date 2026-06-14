@@ -13,6 +13,37 @@ python scripts/warmup.py --embed --keep-alive 300m --auto-pull &
 
 **NOTE: To copy and paste in the codespace, you may need to use keyboard commands - CTRL-C and CTRL-V. Chrome may work best for this.**
 
+---
+
+## One-time setup: stronger model with Groq (used in Labs 3 and 4)
+
+A couple of labs reason better with a more capable model than the local `llama3.2`. **Lab 4 (Agentic RAG) requires this; Lab 3 can optionally use it.** We use Groq's free hosted API - no credit card. Do this once.
+
+1. In a browser, go to https://console.groq.com and sign in (free).
+2. Open **API Keys**, click **Create API Key**, and copy the key (you can't view it again later).
+3. Back in the codespace **TERMINAL**, set these two environment variables - paste your real key in place of `<paste-your-key-here>`:
+
+```
+export AGENT_PROVIDER=groq
+export GROQ_API_KEY=<paste-your-key-here>
+```
+
+4. Verify they're set (this does NOT print the key):
+
+```
+echo "provider=$AGENT_PROVIDER  key=$([ -n "$GROQ_API_KEY" ] && echo set || echo MISSING)"
+```
+
+You should see `provider=groq  key=set`.
+
+**Notes**
+- These variables last for the **current terminal only**. If you open a new terminal or restart the codespace, run the two `export` lines again. (To make them persist across terminals, append the two lines to `~/.bashrc`.)
+- If you skip this, the labs still work - they fall back to the local `llama3.2` model automatically. When an agent starts you'll just see `[MODEL] provider=ollama` instead of `provider=groq`.
+- Optional, strongest reasoning: also run `export AGENT_MODEL=llama-3.3-70b-versatile`
+- Keep your key private. Don't paste it into source files or share it.
+
+---
+
 **Lab 1 - Creating a simple agent**
 
 **Purpose: In this lab, we’ll learn about the basics of agents and see how tools are called. We'll also see how Chain of Thought prompting works with LLMs and how we can have ReAct agents reason and act.**
@@ -122,7 +153,7 @@ Here's a clue: "If latitude/longitude is in the Southern or Western hemisphere, 
 
 ### Steps
 
-1. We have partial implementations of an MCP server and an agent that uses an MCP client to connect to tools on the server. So that you can get acquainted with the main parts of each, we'll build them out as we did the agent in the second lab - by viewing differences and merging. Let's start with the server. Run the command below to see the differences.
+1. We have partial implementations of an MCP server and an agent that uses an MCP client to connect to tools on the server. So that you can get acquainted with the main parts of each, we'll build them out as we did the agent in the first lab - by viewing differences and merging. Let's start with the server. Run the command below to see the differences.
 
 ```
 code -d ../extra/lab2_mcp_server.txt mcp_server_v2.py
@@ -169,7 +200,7 @@ code -d ../extra/lab2_mcp_agent.txt mcp_agent_v2.py
 
 <br><br>
 
-6. Review and merge the changes as before. What we're highlighting in this step are the *System Prompt* that drives the LLM used by the agent, the connection with the MCP client at the /mcp/ endpoint, and the mpc calls to the tools on the server. When finished, close the tab to save the changes as before.
+6. Review and merge the changes as before. What we're highlighting in this step are the *System Prompt* that drives the LLM used by the agent, the connection with the MCP client at the /mcp/ endpoint, and the mcp calls to the tools on the server. When finished, close the tab to save the changes as before.
 
 ![Agent using MCP client code](./images/aip23.png?raw=true "Agent using MCP client code") 
 
@@ -233,7 +264,7 @@ code -d ../extra/curr_conv_agent.txt curr_conv_agent.py
 The code in this application showcases several SmolAgents features and agent techniques including the following. See how many you can identify as your reviewing the code.
 
 - **@tool decorator** turns your Python functions into callable “tools” for the agent.  
-- **LiteLLMModel** plugs in your local Ollama llama3.2 as the agent’s reasoning engine.  
+- **build_model()** chooses the agent's reasoning engine: the stronger hosted **Groq** model if you set up Groq, otherwise the local Ollama `llama3.2` - so the same code runs either way.  
 - **CodeAgent** runs a ReAct loop: think (LLM), act (call tool), observe, repeat.  
 - **Memory feature** remembers current values and persists them (with history) to an external JSON file.  
 <br>
@@ -243,7 +274,18 @@ The code in this application showcases several SmolAgents features and agent tec
 
 <br><br>
 
-3. When you're done merging, close the tab as usual to save your changes. Now, in a terminal, run the agent with the command below:
+3. (Optional) **Use the stronger Groq model for this lab.** If you completed the *One-time Groq setup* near the top of this document, this lab uses it automatically - skip to the next step. To enable it just for this terminal now, run:
+
+```
+export AGENT_PROVIDER=groq
+export GROQ_API_KEY=<paste-your-key-here>
+```
+
+To stay on the local `llama3.2` model instead, do nothing - the code falls back automatically.
+
+<br><br>
+
+4. When you're done merging, close the tab as usual to save your changes. Now, in a terminal, run the agent with the command below:
 
 ```
 python curr_conv_agent.py
@@ -251,7 +293,16 @@ python curr_conv_agent.py
 
 <br><br>
 
-4. Enter a basic prompt like the one below.
+5. As it starts, look for the model line at the top - it confirms which model you're using:
+
+```
+[MODEL] provider=groq  model=groq/llama-3.1-8b-instant      (if you set up Groq)
+[MODEL] provider=ollama  model=ollama_chat/llama3.2          (local fallback)
+```
+
+<br><br>
+
+6. Enter a basic prompt like the one below.
 
 ```
 Convert 100 USD to EUR
@@ -259,13 +310,13 @@ Convert 100 USD to EUR
 
 <br><br>
 
-5. The agent will run for a while and not return as the LLM loads and the processing happens. When it is finished with this run, you'll see output like the screenshot below. Notice that since we used the SmolAgents CodeAgent type, you can see the code it created and executed in the black box. **NOTE: This initial run will take several minutes!**  While you are waiting on it to complete, this is a good time to go back and look at the code in *curr_conv_agent.py* to understand more about it.
+7. When it finishes, you'll see output like the screenshot below. Notice that since we used the SmolAgents CodeAgent type, you can see the code it created and executed in the black box. **NOTE: On the local `llama3.2` model the first run loads the model and can take several minutes. On Groq it typically returns in about a second.**  While you wait, this is a good time to go back and look at the code in *curr_conv_agent.py* to understand more about it.
 
 ![Running agent](./images/aa69.png?raw=true "Running agent")   
 
 <br><br>
 
-6. Now you can try some partial inputs with missing values to demonstrate the agent remembering arguments that were passed to it before. Here are some to try. Output is shown in the screenshot. (You may see some intermediate steps. You're looking for the one with "Final answer" in it.)
+8. Now you can try some partial inputs with missing values to demonstrate the agent remembering arguments that were passed to it before. Here are some to try. Output is shown in the screenshot. (You may see some intermediate steps. You're looking for the one with "Final answer" in it.)
 
 ```
 Convert 400 to JPY
@@ -277,7 +328,7 @@ Convert 200
 
 <br><br>
 
-7. To see the stored history information on disk, type "exit" to exit the tool. Then in the terminal type the command below to see the contents of the file.
+9. To see the stored history information on disk, type "exit" to exit the tool. Then in the terminal type the command below to see the contents of the file.
 
 ```
 cat currency_memory.json
@@ -287,7 +338,7 @@ cat currency_memory.json
 
 <br><br>
 
-8. Finally, you can start the agent again and enter "history" at the prompt to see the persisted history from before. Then you can try a query and it should pick up as before. In the example, we used the query below:
+10. Finally, you can start the agent again and enter "history" at the prompt to see the persisted history from before. Then you can try a query and it should pick up as before. In the example, we used the query below:
 
 ```
 convert 300
@@ -297,7 +348,7 @@ convert 300
 
 <br><br>
 
-9. Just type "exit" when ready to quit the tool.
+11. Just type "exit" when ready to quit the tool.
 
 <p align="center">
 **[END OF LAB]**
@@ -305,65 +356,114 @@ convert 300
 </br></br>
 
     
-**Lab 4 - Using RAG with Agents**
+**Lab 4 - Agentic RAG (model-driven, native tool-calling)**
 
-**Purpose: In this lab, we’ll explore how agents can leverage external data stores via RAG**
+**Purpose: In this lab we build a TRUE agentic RAG agent. Using the model's native tool-calling, the LLM itself decides which tools to call, retrieves (and re-retrieves) as needed, grounds office names to real cities, self-checks whether its answer is supported by the documents, and only then answers - or honestly declines. You'll watch every decision, tool call, grounding check, and validation in the debug output.**
 
 ---
 
 **What the agent example does**
-- Reads, processes, and stores information about company offices from a PDF file
-- Lets you input a starting location
-- Lets you prompt about a destination location such as an office name
-- Maps the destination back to data taken from the PDF if it can
-- Uses the destination from the PDF data or from the prompt to  
-  - Find and provide 3 interesting facts about the destination
-  - Calculate distance from the starting location to the destination
-- Stores information about starting location in an external file
-- Repeats until user enters *exit*
+- Indexes the company-office PDF into a vector database (ChromaDB).
+- Hands the model a set of tools (`search_documents`, `distance_to`, `city_facts`) via native tool-calling.
+- The **MODEL drives the loop**: it decides which tool to call (with real JSON arguments), can retrieve more than once, and decomposes multi-part questions.
+- A grounding check resolves office names to real cities (or reports not-found), and a self-check / validation gate decides whether the answer is grounded before finishing.
 
-**What it demonstrates about the framework**
-- Shows a real-world use of RAG: mapping user input to structured, embedded knowledge.
+**What it demonstrates (agentic RAG, the real thing)**
+- **Multi-step reasoning / decomposition** - the model plans and picks tools each turn.
+- **Live tools & APIs** - retrieval + geocoding + distance + LLM facts.
+- **Self-checks & retries** - a validation gate; the agent retries or honestly declines.
+
+> **Model note:** because this is genuinely model-driven, it needs a capable model. We'll use the free hosted **8B on Groq** (Step 1). The local `llama3.2` default is not reliable enough for this multi-tool agent. **No key / no internet?** Run the deterministic `rag_agent.py` instead - same RAG with the agentic *behavior* in code (offline, reliable). See the fallback note at the end.
 
 ---
 
 ### Steps
 
-1. For this lab, we have an application that reads in a data file in PDF format as our RAG source. The PDF file we're using to illustrate RAG here is a fictional list of offices and related info for a company. You can see it in the repo at  [**data/offices.pdf**](./data/offices.pdf) 
-
-![Data pdf](./images/aa66.png?raw=true "Data pdf") 
-
-
-2. As before, we'll use the "view differences and merge" technique to learn about the code we'll be working with. The command to run this time is below. The code differences mainly hightlight the changes for RAG use in the agent, including working with vector database and snippets returned from searching it.
-   
-```
-code -d ../extra/rag_agent.txt rag_agent.py
-```
-</br></br>
-
-![Code for rag agent](./images/aa65.png?raw=true "Code for rag agent") 
-
-
-3. When you're done merging, close the tab as usual to save your changes. Now, in a terminal, run the agent with the command below:
+1. **Groq is required for this lab.** Complete the *One-time Groq setup* near the top of this document if you haven't already. Then confirm it's active in this terminal:
 
 ```
-python rag_agent.py
+echo "provider=$AGENT_PROVIDER  key=$([ -n "$GROQ_API_KEY" ] && echo set || echo MISSING)"
 ```
 
-4. You'll see the agent loading up the embedding pieces it needs to store the document in the vector database. After that you can choose to override the default starting location, or leave it on the default. You'll see a *User:* prompt when it is ready for input from you. The agent is geared around you entering a prompt about an office. Try a prompt like one of the ones below about office "names" that are only in the PDF.
+You should see `provider=groq  key=set`. If not, re-run the two `export` lines from the setup section. (If you genuinely can't use Groq, skip to the *Offline fallback* note at the end of this lab to run the deterministic `rag_agent.py` on the local model instead.)
+
+<br><br>
+
+2. Build the agent with the diff/merge facility. The skeleton is `agentic_rag_agent.py` in the *agents* directory; the complete reference is `../extra/agentic_rag_agent.txt`. Run:
+
+```
+code -d ../extra/agentic_rag_agent.txt agentic_rag_agent.py
+```
+
+Merge the **four clearly-marked sections** in turn - each has a `>>>>> MERGE SECTION N` banner that explains exactly what you're merging in:
+   - **Section 1 - Tools:** `search_documents`, the `_resolve_place` grounding check (office name -> real city, or not-found), `distance_to`, `city_facts`, and `DISPATCH`.
+   - **Section 2 - Tool schemas + system prompt:** the JSON `TOOLS_SCHEMA` that *enables* native tool-calling, plus the `SYSTEM` instructions.
+   - **Section 3 - Self-check / validation gate:** `validate_answer`.
+   - **Section 4 - The agent loop:** `run_agent`, where the model decides each step.
+
+   When finished, close the tab to save.
+
+<br><br>
+
+3. Run the agent (leave the starting location on the default - answer `n`):
+
+```
+python agentic_rag_agent.py
+```
+
+At the top you should see `[AGENT] provider=groq  model=llama-3.1-8b-instant`, confirming it's using the hosted model.
+
+<br><br>
+
+4. **Watch the agent work.** Ask:
 
 ```
 Tell me about HQ
-Tell me about the Southern office
 ```
 
-5. What you should see after that are some messages that show internal processing, such as the retrieved items from the RAG datastore.  Then the agent will run through the necessary steps like geocoding locations, calculating distance, using the LLM to get interesting facts about the city etc. At the end it will print out facts about the office location, and the city the office is in, as well as the distance to the office.
- 
-![Running the RAG agent](./images/aa67.png?raw=true "Running the RAG agent") 
+Follow the tagged debug lines to see the agent thinking:
+   - `[AGENT] step N` - the model is being asked what to do next.
+   - `[AGENT decision] call tool: ...` - the tool the **model** chose, with its arguments.
+   - `[RAG]` / `[GROUND]` - the retrieval and the office->city grounding check.
+   - `[observation]` - the tool's result fed back to the model.
+   - `[SELF-CHECK]` - validating the answer is grounded, then the `FINAL ANSWER`.
 
-6. The stored information about startup location is in a file named *user_starting_location.json* in the same directory. If you changed the starting location, you can view the file. (If you didn't change the location, the file won't exist.)
+   The model - not the code - chose those tool calls. That's the difference from one-shot RAG.
 
-7. After the initial run, you can try prompts about other offices or cities mentioned in the PDF. Type *exit* when done.
+<br><br>
+
+5. **Decomposition + honest grounding.** Ask:
+
+```
+Which is closer to me, HQ or the Eastern office?
+```
+
+There is no "Eastern office" in the data. Watch the agent call `distance_to` for HQ (the `[GROUND]` line resolves it to New York) and for "Eastern office" (the `[GROUND]` line reports **NOT FOUND**), then answer correctly that HQ is in New York and the Eastern office doesn't exist - listing the offices that do. It decomposed the question and refused to invent an office.
+
+<br><br>
+
+6. **A two-office comparison.** Ask:
+
+```
+Which is closer to me, the London office or the Sydney office?
+```
+
+Watch it call `distance_to` for BOTH offices and compare the real distances in its final answer.
+
+<br><br>
+
+7. Type `exit` when done.
+
+<br><br>
+
+> **Offline fallback (no key / no internet):** run `python rag_agent.py` instead. It does adaptive, self-checking RAG with the orchestration in code - reliable on the local `llama3.2` model - and demonstrates the same agentic *behaviors* (adapt retrieval, self-check, honest grounding) without model-driven tool-calling.
+
+**Lab Summary**
+
+In this lab, you:
+- Built a model-driven agentic RAG agent that uses **native tool-calling** to decide its own tool calls.
+- Watched it **retrieve, ground office names to real cities, decompose** multi-part questions, **self-check**, and either answer or **honestly decline**.
+- Saw, in the debug output, the agentic-RAG pillars in action: multi-step reasoning, live tools & APIs, and self-checks & retries.
 
 <p align="center">
 **[END OF LAB]**
@@ -514,7 +614,7 @@ python agent5.py
 
 **Lab 6 - Building Agents with the Reflective Pattern**
 
-**Purpose: In this lab, we’ll see how to create an agent that uses the reflective pattern using the AutoGen framework.** 
+**Purpose: In this lab, we’ll see how to create an agent that uses the reflective pattern using the AG2 (AutoGen) framework.** 
 
 ---
 

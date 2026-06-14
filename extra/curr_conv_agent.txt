@@ -92,13 +92,35 @@ def calculate(expression: str) -> float:
 # -----------------------------------------------------------------------------
 # AGENT CONFIGURATION
 # -----------------------------------------------------------------------------
+# >>>>> MERGE NOTE (Lab 3 model provider): build_model() lets this lab run on the
+# stronger hosted Groq model for better code-writing/tool selection, while still
+# defaulting to local Ollama. If AGENT_PROVIDER=groq AND GROQ_API_KEY are set we
+# use Groq; if either is unset we transparently fall back to local Ollama.
+def build_model():
+    """Return the LLM the CodeAgent reasons with.
 
-model = LiteLLMModel(
-    model_id="ollama_chat/llama3.2",
-    api_base="http://localhost:11434",
-    num_ctx=4096,
-    temperature=0.0,  # deterministic tool use
-)
+    Default: local Ollama (llama3.2). Set AGENT_PROVIDER=groq and GROQ_API_KEY to
+    use the hosted Groq model instead (stronger reasoning). Optionally override
+    the model name with AGENT_MODEL. Unset vars -> local Ollama fallback.
+    """
+    provider = os.environ.get("AGENT_PROVIDER", "").lower()
+    groq_key = os.environ.get("GROQ_API_KEY")
+    if provider == "groq" and groq_key:
+        model_name = os.environ.get("AGENT_MODEL", "llama-3.1-8b-instant")
+        if not model_name.startswith("groq/"):
+            model_name = "groq/" + model_name
+        print(f"[MODEL] provider=groq  model={model_name}")
+        return LiteLLMModel(model_id=model_name, api_key=groq_key, temperature=0.0)
+    print("[MODEL] provider=ollama  model=ollama_chat/llama3.2  "
+          "(set AGENT_PROVIDER=groq and GROQ_API_KEY to use hosted Groq)")
+    return LiteLLMModel(
+        model_id="ollama_chat/llama3.2",
+        api_base="http://localhost:11434",
+        num_ctx=4096,
+        temperature=0.0,  # deterministic tool use
+    )
+
+model = build_model()
 
 agent = CodeAgent(
     tools=[fetch_live_rate, calculate],
