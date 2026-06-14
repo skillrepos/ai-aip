@@ -323,7 +323,7 @@ convert 300
     
 **Lab 4 - Agentic RAG (model-driven, native tool-calling)**
 
-**Purpose: In this lab we build a TRUE agentic RAG agent. Using the model's native tool-calling, the LLM itself decides which tools to call, retrieves (and re-retrieves) as needed, grounds office names to real cities, self-checks whether its answer is supported by the documents, and only then answers - or honestly declines. You'll watch every decision, tool call, grounding check, and validation in the debug output.**
+**Purpose: In this lab we build a TRUE agentic RAG agent. Using the model's native tool-calling, the LLM itself decides which tools to call, retrieves (and re-retrieves) as needed, grounds office names to real cities, self-checks whether its answer is supported by the documents, and only then answers - or honestly declines. You'll see the decisions, tool calls, grounding checks, and validation in the debug output.**
 
 ---
 
@@ -338,7 +338,7 @@ convert 300
 - **Live tools & APIs** - retrieval + geocoding + distance + LLM facts.
 - **Self-checks & retries** - a validation gate; the agent retries or honestly declines.
 
-> **Model note:** because this is genuinely model-driven, it needs a capable model. We'll use the free hosted **8B on Groq** (Step 1). The local `llama3.2` default is not reliable enough for this multi-tool agent. **No key / no internet?** Run the deterministic `rag_agent.py` instead - same RAG with the agentic *behavior* in code (offline, reliable). See the fallback note at the end.
+> **Model note:** because this is model-driven, it needs a capable model. We'll use the free hosted **8B on Groq** (Step 1). The local `llama3.2` default is not reliable enough for this multi-tool agent. 
 
 ---
 
@@ -380,6 +380,9 @@ python agentic_rag_agent.py
 
 At the top you should see `[AGENT] provider=groq  model=llama-3.1-8b-instant`, confirming it's using the hosted model.
 
+
+   ![Running agent](./images/aip49.png?raw=true "Running agent") 
+
 <br><br>
 
 4. **Watch the agent work.** Ask:
@@ -395,17 +398,21 @@ Follow the tagged debug lines to see the agent thinking:
    - `[observation]` - the tool's result fed back to the model.
    - `[SELF-CHECK]` - validating the answer is grounded, then the `FINAL ANSWER`.
 
-   The model - not the code - chose those tool calls. That's the difference from one-shot RAG.
+   The model - not the code - chose those tool calls. 
+
+![Running agent](./images/aip50.png?raw=true "Running agent") 
 
 <br><br>
 
-5. **Decomposition + honest grounding.** Ask:
+5. **Decomposition + grounding.** Ask:
 
 ```
 Which is closer to me, HQ or the Eastern office?
 ```
 
 There is no "Eastern office" in the data. Watch the agent call `distance_to` for HQ (the `[GROUND]` line resolves it to New York) and for "Eastern office" (the `[GROUND]` line reports **NOT FOUND**), then answer correctly that HQ is in New York and the Eastern office doesn't exist - listing the offices that do. It decomposed the question and refused to invent an office.
+
+![Running agent](./images/aip51.png?raw=true "Running agent") 
 
 <br><br>
 
