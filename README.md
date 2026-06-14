@@ -44,6 +44,7 @@ In a browser, go to https://console.groq.com and sign in (free).
 Open **API Keys**, click **Create API Key**, and copy the key (you can't view it again later).
 Back in the codespace **TERMINAL**, set these two environment variables - paste your real key in place of `<paste-your-key-here>`:
 
+
 ```
 export KEY=<paste-your-key-here>
 
@@ -53,6 +54,11 @@ export "GROQ_API_KEY=$KEY" >> ~/.bashrc
 source ~/.bashrc 
 ```
 
+![Getting API key](./images/aip42.png?raw=true "Getting API key")
+
+![Getting API key](./images/aip44.png?raw=true "Getting API key")
+
+<br><br>
 
 **5. Run the *warm-up* script for faster LLM interactions.**
 
