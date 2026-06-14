@@ -54,6 +54,14 @@ echo "GROQ_API_KEY=$KEY" >> ~/.bashrc
 source ~/.bashrc 
 ```
 
+Verify they're set (this does NOT print the key):
+
+```
+echo "provider=$AGENT_PROVIDER  key=$([ -n "$GROQ_API_KEY" ] && echo set || echo MISSING)"
+```
+
+You should see `provider=groq  key=set`.
+
 ![Getting API key](./images/aip42.png?raw=true "Getting API key")
 
 ![Getting API key](./images/aip44.png?raw=true "Getting API key")
