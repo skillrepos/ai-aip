@@ -277,7 +277,7 @@ Convert 100 USD to EUR
 
 7. When it finishes, you'll see output like the screenshot below. Notice that since we used the SmolAgents CodeAgent type, you can see the code it created and executed in the black box. **NOTE: On the local `llama3.2` model the first run loads the model and can take several minutes. On Groq it typically returns in about a second.**  
 
-![Running agent](./images/aa69.png?raw=true "Running agent")   
+![Running agent](./images/aip46.png?raw=true "Running agent")   
 
 <br><br>
 
