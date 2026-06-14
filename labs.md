@@ -1,7 +1,7 @@
 # Implementing AI Agents in Python
 ## Using frameworks, MCP, and RAG for agentic AI
 ## Session labs 
-## Revision 1.6 - 06/14/26
+## Revision 1.7 - 06/14/26
 
 **Follow the startup instructions in the README.md file IF NOT ALREADY DONE!**
 
@@ -367,6 +367,8 @@ Merge the **four clearly-marked sections** in turn - each has a `>>>>> MERGE SEC
    - **Section 4 - The agent loop:** `run_agent`, where the model decides each step.
 
    When finished, close the tab to save.
+
+   ![Merging agent](./images/aip47.png?raw=true "Merging agent") 
 
 <br><br>
 
