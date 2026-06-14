@@ -275,7 +275,7 @@ Convert 100 USD to EUR
 
 <br><br>
 
-7. When it finishes, you'll see output like the screenshot below. Notice that since we used the SmolAgents CodeAgent type, you can see the code it created and executed in the black box. **NOTE: On the local `llama3.2` model the first run loads the model and can take several minutes. On Groq it typically returns in about a second.**  While you wait, this is a good time to go back and look at the code in *curr_conv_agent.py* to understand more about it.
+7. When it finishes, you'll see output like the screenshot below. Notice that since we used the SmolAgents CodeAgent type, you can see the code it created and executed in the black box. **NOTE: On the local `llama3.2` model the first run loads the model and can take several minutes. On Groq it typically returns in about a second.**  
 
 ![Running agent](./images/aa69.png?raw=true "Running agent")   
 
