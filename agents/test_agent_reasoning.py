@@ -10,6 +10,22 @@ from unittest.mock import Mock, patch, MagicMock
 from smolagents import ToolCallingAgent, LiteLLMModel, tool
 
 
+# --- Model provider for the REAL-agent tests (Groq if AGENT_PROVIDER=groq and
+#     GROQ_API_KEY are exported, else local Ollama). Same toggle as Labs 3, 4, 8. ---
+def build_test_model():
+    provider = os.environ.get("AGENT_PROVIDER", "").strip().lower()
+    groq_key = os.environ.get("GROQ_API_KEY", "").strip()
+    if provider == "groq" and groq_key:
+        name = os.environ.get("AGENT_MODEL", "llama-3.1-8b-instant").strip()
+        if not name.startswith("groq/"):
+            name = "groq/" + name
+        print(f"[MODEL] provider=groq  model={name}")
+        return LiteLLMModel(model_id=name, api_key=groq_key, temperature=0.0)
+    model = "ollama/" + os.getenv("OLLAMA_MODEL", "llama3.2:latest")
+    print(f"[MODEL] provider=ollama  model={model}")
+    return LiteLLMModel(model_id=model, api_base="http://localhost:11434")
+
+
 # ========== TOOLS FOR TESTING ==========
 
 @tool
@@ -326,12 +342,7 @@ def test_real_agent_tool_selection():
     print()
 
 
-    model = "ollama/" + os.getenv("OLLAMA_MODEL", "llama3.2:latest")
-
-    llm = LiteLLMModel(
-        model_id=model,
-        api_base="http://localhost:11434"
-    )
+    llm = build_test_model()
 
     # Create agent with all real-world tools
     agent = ToolCallingAgent(
@@ -417,12 +428,7 @@ def test_real_agent_currency_conversion():
     print("Using REAL currency exchange API!")
     print()
 
-    model = "ollama/" + os.getenv("OLLAMA_MODEL", "llama3.2:latest")
-
-    llm = LiteLLMModel(
-        model_id=model,
-        api_base="http://localhost:11434"
-    )
+    llm = build_test_model()
 
     agent = ToolCallingAgent(
         tools=[currency_converter],
@@ -486,12 +492,7 @@ def test_real_agent_error_recovery():
     print("🧪 REAL AGENT TEST - Error handling")
     print("="*60)
 
-    model = "ollama/" + os.getenv("OLLAMA_MODEL", "llama3.2:latest")
-
-    llm = LiteLLMModel(
-        model_id=model,
-        api_base="http://localhost:11434"
-    )
+    llm = build_test_model()
 
     agent = ToolCallingAgent(
         tools=[calculator, weather, currency_converter],
@@ -546,7 +547,6 @@ if __name__ == "__main__":
     print("  python -m pytest test_agent_reasoning.py -v -s -k 'not real'")
     print("\nRun all real agent tests:")
     print("  python -m pytest test_agent_reasoning.py -v -s -k 'real'")
-    print("\nNote: Use 'python -m pytest' to use your current Python environment")
-    print("      Add '-s' flag to see test output and explanations")
-    print("      Real agent tests require internet connection for APIs")
+    print("\nThe real tests use local Ollama by default; export AGENT_PROVIDER=groq")
+    print("and GROQ_API_KEY to run them fast on the hosted model instead.")
     print("="*60 + "\n")

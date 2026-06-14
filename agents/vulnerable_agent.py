@@ -13,6 +13,22 @@ warnings.filterwarnings("ignore", message="Pydantic serializer warnings")
 
 OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "llama3.2:1b")
 
+# --- Model provider: Groq if AGENT_PROVIDER=groq and GROQ_API_KEY are exported, else local
+#     Ollama. Same toggle as Labs 3, 4, 7 - the ONLY change to this file. ---
+def build_model():
+    provider = os.environ.get("AGENT_PROVIDER", "").strip().lower()
+    groq_key = os.environ.get("GROQ_API_KEY", "").strip()
+    if provider == "groq" and groq_key:
+        name = os.environ.get("AGENT_MODEL", "llama-3.1-8b-instant").strip()
+        if not name.startswith("groq/"):
+            name = "groq/" + name
+        print(f"[MODEL] provider=groq  model={name}")
+        return LiteLLMModel(model_id=name, api_key=groq_key, temperature=0.0)
+    print(f"[MODEL] provider=ollama  model=ollama/{OLLAMA_MODEL}")
+    return LiteLLMModel(model_id=f"ollama/{OLLAMA_MODEL}", api_base="http://localhost:11434")
+
+
+
 # ========== SIMULATED EMPLOYEE DATABASE ==========
 
 EMPLOYEES = {
@@ -126,17 +142,13 @@ def main():
     print("\nOmniTech HR Benefits Assistant")
     print("Type 'quit' to exit.\n")
 
-    # NOTE: If Ollama fails due to memory constraints, you can set 
+    # NOTE: If Ollama fails due to memory constraints, you can set
     # OLLAMA_MODEL to a smaller model or increase container resources
-    print(f"[INFO] Using Ollama model: {OLLAMA_MODEL}")
     print("[INFO] Note: Agent requires ~2-4GB RAM for llama3.2:1b")
     print()
-    
+
     try:
-        llm = LiteLLMModel(
-            model_id=f"ollama/{OLLAMA_MODEL}",
-            api_base="http://localhost:11434",
-        )
+        llm = build_model()
 
         # VULNERABILITY: Agent has ALL 5 tools, including dangerous ones
         agent = ToolCallingAgent(

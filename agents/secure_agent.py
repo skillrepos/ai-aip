@@ -1,7 +1,7 @@
 """
 Secure Enterprise HR Benefits Agent
 Implements defense-in-depth security controls against prompt injection.
-Merge from ../extra/enterprise_agent_secure_lab.txt to complete all 5 security layers.
+Merge from ../extra/secure_agent.txt to complete all 5 security layers.
 """
 
 import os
@@ -15,6 +15,23 @@ import datetime
 warnings.filterwarnings("ignore", message="Pydantic serializer warnings")
 
 OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "llama3.2:1b")
+
+
+# --- Model provider: Groq if AGENT_PROVIDER=groq and GROQ_API_KEY are exported, else local Ollama ---
+# (Same toggle as Labs 3, 4, and 7. The security defenses below are deterministic, so they
+#  work on any model; Groq just makes the agent faster and its tool use more reliable.)
+def build_model():
+    provider = os.environ.get("AGENT_PROVIDER", "").strip().lower()
+    groq_key = os.environ.get("GROQ_API_KEY", "").strip()
+    if provider == "groq" and groq_key:
+        name = os.environ.get("AGENT_MODEL", "llama-3.1-8b-instant").strip()
+        if not name.startswith("groq/"):
+            name = "groq/" + name
+        print(f"[MODEL] provider=groq  model={name}")
+        return LiteLLMModel(model_id=name, api_key=groq_key, temperature=0.0)
+    print(f"[MODEL] provider=ollama  model=ollama/{OLLAMA_MODEL}")
+    return LiteLLMModel(model_id=f"ollama/{OLLAMA_MODEL}", api_base="http://localhost:11434")
+
 
 # ========== SIMULATED EMPLOYEE DATABASE ==========
 
@@ -96,15 +113,11 @@ def main():
     print("\nOmniTech HR Benefits Assistant (Secure)")
     print("Type 'quit' to exit.\n")
 
-    print(f"[INFO] Using Ollama model: {OLLAMA_MODEL}")
     print("[INFO] Note: Small models may struggle with tool arguments")
     print()
 
     try:
-        llm = LiteLLMModel(
-            model_id=f"ollama/{OLLAMA_MODEL}",
-            api_base="http://localhost:11434",
-        )
+        llm = build_model()
 
         # LEAST PRIVILEGE: Only read-only benefits and PTO tools
         agent = ToolCallingAgent(
@@ -136,4 +149,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

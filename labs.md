@@ -361,9 +361,9 @@ code -d ../extra/agentic_rag_agent.txt agentic_rag_agent.py
 ```
 
 Merge the **four clearly-marked sections** in turn - each has a `>>>>> MERGE SECTION N` banner that explains exactly what you're merging in:
-   - **Section 1 - Tools:** `search_documents`, the `_resolve_place` grounding check (office name -> real city, or not-found), `distance_to`, `city_facts`, and `DISPATCH`.
+   - **Section 1 - Tools:** `search_documents`, the `ground_office` grounding check (office name -> real city, or not-found), `distance_to`, `city_facts`, and `DISPATCH`.
    - **Section 2 - Tool schemas + system prompt:** the JSON `TOOLS_SCHEMA` that *enables* native tool-calling, plus the `SYSTEM` instructions.
-   - **Section 3 - Self-check / validation gate:** `validate_answer`.
+   - **Section 3 - Self-check gate:** `validate_answer` (a quick deterministic check that the answer is grounded).
    - **Section 4 - The agent loop:** `run_agent`, where the model decides each step.
 
    When finished, close the tab to save.
