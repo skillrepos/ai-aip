@@ -812,7 +812,7 @@ This will do the following: (running time: ~2-3 min):
 <br><br>
 
 
-9. While waiting, open the test to see what's being validated:
+9. You can view the particular part of the code for the test to see what's being validated:
 ```
 code test_agent_reasoning.py
 ```
