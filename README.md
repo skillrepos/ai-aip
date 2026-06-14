@@ -48,8 +48,8 @@ Back in the codespace **TERMINAL**, set these two environment variables - paste 
 ```
 export KEY=<paste-your-key-here>
 
-echo "AGENT_PROVIDER=groq" >> ~/.bashrc
-echo "GROQ_API_KEY=$KEY" >> ~/.bashrc
+echo "export AGENT_PROVIDER=groq" >> ~/.bashrc
+echo "export GROQ_API_KEY=$KEY" >> ~/.bashrc
 
 source ~/.bashrc 
 ```
