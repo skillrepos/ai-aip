@@ -368,7 +368,7 @@ Merge the **four clearly-marked sections** in turn - each has a `>>>>> MERGE SEC
 
    When finished, close the tab to save.
 
-   ![Merging agent](./images/aip47.png?raw=true "Merging agent") 
+   ![Merging agent](./images/aip48.png?raw=true "Merging agent") 
 
 <br><br>
 
