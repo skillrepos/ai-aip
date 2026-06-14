@@ -26,7 +26,7 @@ Click here ➡️  [![Open in GitHub Codespaces](https://github.com/codespaces/b
 
 ![Creating new codespace from button](./images/aip1.png?raw=true "Creating new codespace from button")
 
-This will run for a long time (10 or more minutes) while it gets everything ready.
+This will run for several minutes while it gets everything ready.
 
 After the initial startup, it will run a script to setup the python environment, install needed python pieces, install Ollama, and then download the models we will use. This will take several more minutes to run. It will look like this while this is running.
 
@@ -38,7 +38,23 @@ The codespace is ready to use when you see a prompt like the one shown below in 
 
 <br><br>
 
-**4. Run the *warm-up* script for faster LLM interactions.**
+**4. Get a free API key for groq to enable use of more powerful models for some of the labs.**
+
+In a browser, go to https://console.groq.com and sign in (free).
+Open **API Keys**, click **Create API Key**, and copy the key (you can't view it again later).
+Back in the codespace **TERMINAL**, set these two environment variables - paste your real key in place of `<paste-your-key-here>`:
+
+```
+export KEY=<paste-your-key-here>
+
+export "AGENT_PROVIDER=groq" >> ~/.bashrc
+export "GROQ_API_KEY=$KEY" >> ~/.bashrc
+
+source ~/.bashrc 
+```
+
+
+**5. Run the *warm-up* script for faster LLM interactions.**
 
 ```
 python scripts/warmup.py --embed --keep-alive 300m --auto-pull &
@@ -51,7 +67,7 @@ After this runs, you'll see a **READY FOR WORKSHOP!** message. You can just hit 
 
 <br><br>
 
-**5. Open up the *labs.md* file so you can follow along with the labs.**
+**6. Open up the *labs.md* file so you can follow along with the labs.**
 You can either open it in a separate browser instance or open it in the codespace. 
 
 <br><br>
