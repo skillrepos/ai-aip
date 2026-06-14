@@ -103,16 +103,17 @@ def build_model():
     use the hosted Groq model instead (stronger reasoning). Optionally override
     the model name with AGENT_MODEL. Unset vars -> local Ollama fallback.
     """
-    provider = os.environ.get("AGENT_PROVIDER", "").lower()
-    groq_key = os.environ.get("GROQ_API_KEY")
+    provider = os.environ.get("AGENT_PROVIDER", "").strip().lower()
+    groq_key = (os.environ.get("GROQ_API_KEY") or "").strip()
     if provider == "groq" and groq_key:
-        model_name = os.environ.get("AGENT_MODEL", "llama-3.1-8b-instant")
+        model_name = os.environ.get("AGENT_MODEL", "llama-3.1-8b-instant").strip()
         if not model_name.startswith("groq/"):
             model_name = "groq/" + model_name
         print(f"[MODEL] provider=groq  model={model_name}")
         return LiteLLMModel(model_id=model_name, api_key=groq_key, temperature=0.0)
-    print("[MODEL] provider=ollama  model=ollama_chat/llama3.2  "
-          "(set AGENT_PROVIDER=groq and GROQ_API_KEY to use hosted Groq)")
+    print(f"[MODEL] provider=ollama  model=ollama_chat/llama3.2  "
+          f"(AGENT_PROVIDER={provider!r}, GROQ_API_KEY={'set' if groq_key else 'NOT set'}; "
+          f"to use Groq you must EXPORT both: export AGENT_PROVIDER=groq; export GROQ_API_KEY=...)")
     return LiteLLMModel(
         model_id="ollama_chat/llama3.2",
         api_base="http://localhost:11434",

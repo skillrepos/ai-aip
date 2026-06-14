@@ -41,15 +41,19 @@ STARTING_LOC_FILE = "user_starting_location.json"
 DEFAULT_LOCATION = {"city": "Raleigh, NC", "lat": 35.7796, "lon": -78.6382}
 
 # --- Model provider toggle (default local Ollama; AGENT_PROVIDER=groq for Groq) ---
-PROVIDER = os.environ.get("AGENT_PROVIDER", "ollama").lower()
-if PROVIDER == "groq":
-    client = OpenAI(base_url="https://api.groq.com/openai/v1",
-                    api_key=os.environ.get("GROQ_API_KEY", "MISSING_GROQ_API_KEY"))
-    MODEL = os.environ.get("AGENT_MODEL", "llama-3.1-8b-instant")
+PROVIDER = os.environ.get("AGENT_PROVIDER", "ollama").strip().lower()
+GROQ_KEY = (os.environ.get("GROQ_API_KEY") or "").strip()
+USE_GROQ = (PROVIDER == "groq" and GROQ_KEY)
+if PROVIDER == "groq" and not GROQ_KEY:
+    print(f"{BOLD}{RED}[AGENT] AGENT_PROVIDER=groq but GROQ_API_KEY is NOT set in this "
+          f"environment (did you EXPORT it?). Falling back to local Ollama.{RESET}")
+if USE_GROQ:
+    client = OpenAI(base_url="https://api.groq.com/openai/v1", api_key=GROQ_KEY)
+    MODEL = os.environ.get("AGENT_MODEL", "llama-3.1-8b-instant").strip()
 else:
     client = OpenAI(base_url="http://localhost:11434/v1", api_key="ollama")
-    MODEL = os.environ.get("AGENT_MODEL", "llama3.2")
-print(f"{BOLD}{CYAN}[AGENT] provider={PROVIDER}  model={MODEL}{RESET}")
+    MODEL = os.environ.get("AGENT_MODEL", "llama3.2").strip()
+print(f"{BOLD}{CYAN}[AGENT] provider={'groq' if USE_GROQ else 'ollama'}  model={MODEL}{RESET}")
 
 
 # --- Given helpers (already in the skeleton): live geocoding + distance math ---
