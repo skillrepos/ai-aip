@@ -1,7 +1,7 @@
 # Implementing AI Agents in Python
 ## Using frameworks, MCP, and RAG for agentic AI
 ## Session labs 
-## Revision 1.7 - 06/14/26
+## Revision 1.8 - 06/14/26
 
 **Follow the startup instructions in the README.md file IF NOT ALREADY DONE!**
 
@@ -419,14 +419,35 @@ There is no "Eastern office" in the data. Watch the agent call `distance_to` for
 6. **A two-office comparison.** Ask:
 
 ```
-Which is closer to me, the London office or the Sydney office?
+Which is closer to me, HQ or the Midwest office?
 ```
 
-Watch it call `distance_to` for BOTH offices and compare the real distances in its final answer.
+Watch it call `distance_to` for BOTH offices and compare the real distances in its final answer. What you may see is that it gets the answer wrong. The smaller 8B model we're using can't always reliably do the "smaller = closer" deduction.
+
+![Running agent](./images/aip52.png?raw=true "Running agent") 
+
 
 <br><br>
 
-7. Type `exit` when done.
+7. Let's try the operation again with a larger model. In the terminal, update the model we're using with the command below.
+
+```
+export AGENT_MODEL=llama-3.3-70b-versatile
+```
+
+<br><br>
+
+8. Now, trying running the same query from step 6 again. This time you will likely see the AI provide the right answer.
+
+```
+Which is closer to me, HQ or the Midwest office?
+```
+
+![Running agent](./images/aip53.png?raw=true "Running agent") 
+
+<br><br>
+
+9. Type `exit` when done.
 
 <br><br>
 
