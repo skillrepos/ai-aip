@@ -1,46 +1,13 @@
 # Implementing AI Agents in Python
 ## Using frameworks, MCP, and RAG for agentic AI
 ## Session labs 
-## Revision 1.5 - 03/19/26
+## Revision 1.6 - 06/14/26
 
 **Follow the startup instructions in the README.md file IF NOT ALREADY DONE!**
 
-**If you have to restart your codespace, for best performance, you may want to run the warmup command again.** If you get any failures during that, try running it again.
-
-```
-python scripts/warmup.py --embed --keep-alive 300m --auto-pull &
-```
+**If you have to restart your codespace, for best performance, you may need to repeat steps 4 and 5 in the README to set your Groq key and warmup the Codespace again.** 
 
 **NOTE: To copy and paste in the codespace, you may need to use keyboard commands - CTRL-C and CTRL-V. Chrome may work best for this.**
-
----
-
-## One-time setup: stronger model with Groq (used in Labs 3 and 4)
-
-A couple of labs reason better with a more capable model than the local `llama3.2`. **Lab 4 (Agentic RAG) requires this; Lab 3 can optionally use it.** We use Groq's free hosted API - no credit card. Do this once.
-
-1. In a browser, go to https://console.groq.com and sign in (free).
-2. Open **API Keys**, click **Create API Key**, and copy the key (you can't view it again later).
-3. Back in the codespace **TERMINAL**, set these two environment variables - paste your real key in place of `<paste-your-key-here>`:
-
-```
-export AGENT_PROVIDER=groq
-export GROQ_API_KEY=<paste-your-key-here>
-```
-
-4. Verify they're set (this does NOT print the key):
-
-```
-echo "provider=$AGENT_PROVIDER  key=$([ -n "$GROQ_API_KEY" ] && echo set || echo MISSING)"
-```
-
-You should see `provider=groq  key=set`.
-
-**Notes**
-- These variables last for the **current terminal only**. If you open a new terminal or restart the codespace, run the two `export` lines again. (To make them persist across terminals, append the two lines to `~/.bashrc`.)
-- If you skip this, the labs still work - they fall back to the local `llama3.2` model automatically. When an agent starts you'll just see `[MODEL] provider=ollama` instead of `provider=groq`.
-- Optional, strongest reasoning: also run `export AGENT_MODEL=llama-3.3-70b-versatile`
-- Keep your key private. Don't paste it into source files or share it.
 
 ---
 
@@ -251,11 +218,20 @@ What is the weather in New York?
 
 ### Steps
 
-1. For this lab, we have a simple application that does currency conversion using prompts of the form "Convert 100 USD to EUR", where *USD* = US dollars and *EUR* = euros.  It will also remember previous values and invocations.
+1. **Use the stronger Groq model for this lab.** If you completed the *One-time Groq setup* near the top of this document, this lab uses it automatically - skip to the next step. To enable it just for this terminal now, run:
+
+```
+export AGENT_PROVIDER=groq
+export GROQ_API_KEY=<paste-your-key-here>
+```
 
 <br><br>
 
-2. As before, we'll use the "view differences and merge" technique to learn about the code we'll be working with. The command to run this time is below:
+2. For this lab, we have a simple application that does currency conversion using prompts of the form "Convert 100 USD to EUR", where *USD* = US dollars and *EUR* = euros.  It will also remember previous values and invocations.
+
+<br><br>
+
+3. As before, we'll use the "view differences and merge" technique to learn about the code we'll be working with. Make sure you are in the `agents` directory. Then the command to run this time is below:
 
 ```
 code -d ../extra/curr_conv_agent.txt curr_conv_agent.py
@@ -271,17 +247,6 @@ The code in this application showcases several SmolAgents features and agent tec
 
 
 ![Code for memory agent](./images/aa68.png?raw=true "Code for memory agent") 
-
-<br><br>
-
-3. (Optional) **Use the stronger Groq model for this lab.** If you completed the *One-time Groq setup* near the top of this document, this lab uses it automatically - skip to the next step. To enable it just for this terminal now, run:
-
-```
-export AGENT_PROVIDER=groq
-export GROQ_API_KEY=<paste-your-key-here>
-```
-
-To stay on the local `llama3.2` model instead, do nothing - the code falls back automatically.
 
 <br><br>
 
