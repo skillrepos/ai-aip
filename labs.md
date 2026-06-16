@@ -1,7 +1,7 @@
 # Implementing AI Agents in Python
 ## Using frameworks, MCP, and RAG for agentic AI
 ## Session labs 
-## Revision 1.11 - 06/16/26
+## Revision 1.12 - 06/16/26
 
 **Follow the startup instructions in the README.md file IF NOT ALREADY DONE!**
 
@@ -400,7 +400,7 @@ Follow the tagged debug lines to see the agent thinking:
 
    The model - not the code - chose those tool calls. 
 
-![Running agent](./images/aip50.png?raw=true "Running agent") 
+![Running agent](./images/aip61.png?raw=true "Running agent") 
 
 <br><br>
 
@@ -437,7 +437,7 @@ export AGENT_MODEL=llama-3.3-70b-versatile
 
 <br><br>
 
-8. Now, trying running the same query from step 6 again. This time you will likely see the AI provide the right answer.
+8. Now, start the agent again and try running the same query from step 6 again. This time you will likely see the AI provide the right answer.
 
 ```
 Which is closer to me, HQ or the Midwest office?
