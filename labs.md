@@ -1,7 +1,7 @@
 # Implementing AI Agents in Python
 ## Using frameworks, MCP, and RAG for agentic AI
 ## Session labs 
-## Revision 1.9 - 06/16/26
+## Revision 1.10 - 06/16/26
 
 **Follow the startup instructions in the README.md file IF NOT ALREADY DONE!**
 
@@ -173,7 +173,7 @@ code -d ../extra/lab2_mcp_agent.txt mcp_agent_v2.py
 
 <br><br>
    
-7. After you've made and saved the changes, you can run the client in the terminal with the command below. **Note that there may be a long pause initially while the model is loaded and processed before you get the final answer. This could be on the order of minutes.**
+7. After you've made and saved the changes, you can run the client in the terminal with the command below. (There may be some spurious warnings about deprecated elements at the start of the output. These can be ignored.)
 
 ```
 python mcp_agent_v2.py
