@@ -1,7 +1,7 @@
 # Implementing AI Agents in Python
 ## Using frameworks, MCP, and RAG for agentic AI
 ## Session labs 
-## Revision 1.8 - 06/14/26
+## Revision 1.9 - 06/16/26
 
 **Follow the startup instructions in the README.md file IF NOT ALREADY DONE!**
 
@@ -148,7 +148,7 @@ python mcp_server_v2.py
 
 <br><br>
 
-4. We also have a small tool that can call the MCP *discover* method to find the list of tools from our server. This is just for demo purposes. You can take a look at the code either by clicking on [**scripts/discover_tools.py**](./scripts/discover_tools.py) or by entering the first command below in the codespace's terminal. The actual code here is minimal. It connects to our server and invokes the list_tools method. Run it with the second command below and you should see the list of tools like in the screenshot.
+4. We also have a small tool that can call the MCP *discover* method to find the list of tools from our server. This is just for demo purposes. You can take a look at the code either by clicking on [**scripts/discover_tools.py**](./scripts/discover_tools.py) or by entering the first command below in the codespace's terminal. The actual code here is minimal. It connects to our server and invokes the list_tools method. Run it with the second command below and you should see the list of tools like in the screenshot. (You may need to scroll up to see some of the previous output.)
 
 ```
 code ../scripts/discover_tools.py
