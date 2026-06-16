@@ -1,7 +1,7 @@
 # Implementing AI Agents in Python
 ## Using frameworks, MCP, and RAG for agentic AI
 ## Session labs 
-## Revision 1.10 - 06/16/26
+## Revision 1.11 - 06/16/26
 
 **Follow the startup instructions in the README.md file IF NOT ALREADY DONE!**
 
@@ -372,7 +372,7 @@ Merge the **four clearly-marked sections** in turn - each has a `>>>>> MERGE SEC
 
 <br><br>
 
-3. Run the agent (leave the starting location on the default - answer `n`):
+3. Run the agent (you can change or just leave the starting location):
 
 ```
 python agentic_rag_agent.py
