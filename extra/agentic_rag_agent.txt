@@ -139,8 +139,9 @@ DISPATCH = {"search_documents": search_documents, "distance_to": distance_to, "c
 
 
 # >>>>> MERGE SECTION 2: tool schemas (enable native tool-calling) + system prompt >>>>>
-# TOOLS_SCHEMA is passed to the model via tools=...; it is what makes the model
-# return structured tool calls.  SYSTEM tells it how to behave.
+# TOOLS_SCHEMA holds a provider-agnostic tool schema. We convert it to an
+# OpenAI-style `functions` list and call the model with `functions=...`.
+# Older/local providers that expose `tool_calls` are still supported by the runtime.
 TOOLS_SCHEMA = [
     {"type": "function", "function": {"name": "search_documents",
         "description": "Retrieve office-document snippets. Call first; call again with a better query if needed.",
