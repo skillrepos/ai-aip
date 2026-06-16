@@ -429,7 +429,7 @@ Watch it call `distance_to` for BOTH offices and compare the real distances in i
 
 <br><br>
 
-7. Let's try the operation again with a larger model. In the terminal, update the model we're using with the command below.
+7. Let's try the operation again with a larger model. In the terminal, stop the running agent with `exit` and update the model we're using with the command below.
 
 ```
 export AGENT_MODEL=llama-3.3-70b-versatile
