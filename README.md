@@ -59,7 +59,11 @@ e. **Copy the key** (you can't view it again later).
 
 ![Copy the key](./images/aip58.png?raw=true "Copy the key")
 
-f. Back in the codespace **TERMINAL**, run the command below to set your key for all terminals. Paste your key when prompted and then hit *Enter*:
+<br><br>
+
+**5. Setup your groq key in your codespace.**
+
+Back in the codespace **TERMINAL**, run the command below to set your key for all terminals. Paste your key when prompted and then hit *Enter*:
 
 ```
 source scripts/setup-key.sh
@@ -71,7 +75,7 @@ Afterwards, you should see output that indicates two environment variables (AGEN
 
 <br><br>
 
-**5. Run the *warm-up* script for faster LLM interactions.**
+**6. Run the *warm-up* script for faster LLM interactions.**
 
 ```
 python scripts/warmup.py --embed --keep-alive 300m --auto-pull &
@@ -84,7 +88,7 @@ After this runs, you'll see a **READY FOR WORKSHOP!** message. You can just hit 
 
 <br><br>
 
-**6. Open up the *labs.md* file so you can follow along with the labs.**
+**7. Open up the *labs.md* file so you can follow along with the labs.**
 You can either open it in a separate browser instance or open it in the codespace. 
 
 <br><br>
