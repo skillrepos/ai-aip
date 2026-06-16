@@ -44,11 +44,11 @@ a. In a browser, go to https://console.groq.com and create an account. (If you h
 
 b. In the top right of the Groq screen, click on **API Keys**
 
-![API keys](./images/aip54.png?raw=true "API keys")
+![API keys](./images/aip55.png?raw=true "API keys")
 
 c. Then click the **Create API Key** button.
 
-![Create API Key](./images/aip55.png?raw=true "Create API Key")
+![Create API Key](./images/aip56.png?raw=true "Create API Key")
 
 
 d. Fill in the information, verify you're human if asked, and click **Submit**.
