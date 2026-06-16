@@ -114,7 +114,24 @@ def city_facts(args, state):
                 {"role": "user", "content": f"Three facts about {g['city']}."}]
     out = client.chat.completions.create(model=MODEL, messages=messages).choices[0].message.content
     facts = [line.lstrip("- ").strip() for line in out.splitlines() if line.strip().startswith("-")][:3]
-    return {"city": g["city"], "facts": facts}
+    # Maintain normalized seen facts in state to avoid repeating the same fact
+    if "facts_seen_norms" not in state:
+        state["facts_seen_norms"] = []
+    seen_norms = state["facts_seen_norms"]
+    unique_facts = []
+    for f in facts:
+        words = set(re.findall(r"[a-z0-9]+", f.lower()))
+        is_dup = False
+        for ew in seen_norms:
+            inter = words.intersection(ew)
+            # consider duplicate if large overlap relative to the smaller fact
+            if len(inter) / max(1, min(len(words), len(ew))) > 0.6:
+                is_dup = True
+                break
+        if not is_dup:
+            unique_facts.append(f)
+            seen_norms.append(words)
+    return {"city": g["city"], "facts": unique_facts}
 
 
 DISPATCH = {"search_documents": search_documents, "distance_to": distance_to, "city_facts": city_facts}
@@ -169,32 +186,56 @@ def run_agent(user_query, start, max_steps=8):
                 {"role": "user", "content": f"My starting location is {start['city']}. {user_query}"}]
     for step in range(1, max_steps + 1):
         print(f"\n[AGENT] step {step}: asking the model what to do...")
-        message = client.chat.completions.create(
-            model=MODEL, messages=messages, tools=TOOLS_SCHEMA, temperature=0).choices[0].message
+        # Convert provider-specific TOOLS_SCHEMA to OpenAI-style functions list
+        FUNCTIONS = [t["function"] if isinstance(t, dict) and "function" in t else t for t in TOOLS_SCHEMA]
+        resp = client.chat.completions.create(
+            model=MODEL, messages=messages, functions=FUNCTIONS, temperature=0)
+        message = resp.choices[0].message
 
-        if not message.tool_calls:
-            answer = message.content or ""
-            verdict = validate_answer(answer, state)
-            print(f"    [SELF-CHECK] complete={verdict['complete']} {verdict['missing']}")
-            if verdict["complete"]:
-                print("\n" + "=" * 60 + f"\nFINAL ANSWER:\n{answer}\n" + "=" * 60)
-                return
-            messages += [{"role": "assistant", "content": answer},
-                         {"role": "user", "content": f"Missing: {verdict['missing']}. Use the tools, then answer."}]
+        # Provider-specific path: older/local providers may expose `tool_calls`
+        if getattr(message, "tool_calls", None):
+            messages.append({"role": "assistant", "content": message.content or "", "tool_calls": [
+                {"id": tc.id, "type": "function",
+                 "function": {"name": tc.function.name, "arguments": tc.function.arguments}} for tc in message.tool_calls]})
+            for tc in message.tool_calls:
+                try:
+                    args = json.loads(tc.function.arguments or "{}")
+                except Exception:
+                    args = {}
+                print(f"    [AGENT decision] call {tc.function.name}({json.dumps(args)})")
+                result = DISPATCH.get(tc.function.name, lambda a, s: {"error": "unknown tool"})(args, state)
+                print(f"    [observation] {json.dumps(result)[:200]}")
+                messages.append({"role": "tool", "tool_call_id": tc.id, "content": json.dumps(result)})
             continue
 
-        messages.append({"role": "assistant", "content": message.content or "", "tool_calls": [
-            {"id": tc.id, "type": "function",
-             "function": {"name": tc.function.name, "arguments": tc.function.arguments}} for tc in message.tool_calls]})
-        for tc in message.tool_calls:
+        # OpenAI-style function calling: check for `function_call`
+        func_call = getattr(message, "function_call", None)
+        if func_call and getattr(func_call, "name", None):
+            # single function call
             try:
-                args = json.loads(tc.function.arguments or "{}")
+                args = json.loads(func_call.arguments or "{}")
             except Exception:
                 args = {}
-            print(f"    [AGENT decision] call {tc.function.name}({json.dumps(args)})")
-            result = DISPATCH.get(tc.function.name, lambda a, s: {"error": "unknown tool"})(args, state)
+            fname = func_call.name
+            print(f"    [AGENT decision] call {fname}({json.dumps(args)})")
+            result = DISPATCH.get(fname, lambda a, s: {"error": "unknown tool"})(args, state)
             print(f"    [observation] {json.dumps(result)[:200]}")
-            messages.append({"role": "tool", "tool_call_id": tc.id, "content": json.dumps(result)})
+            # append assistant function call and tool observation to messages (OpenAI pattern)
+            messages.append({"role": "assistant", "content": message.content or "", "tool_calls": [
+                {"id": "function_call_0", "type": "function", "function": {"name": fname, "arguments": json.dumps(func_call.arguments)}}]})
+            messages.append({"role": "tool", "tool_call_id": "function_call_0", "content": json.dumps(result)})
+            continue
+
+        # No tool/function call -> final assistant answer
+        answer = message.content or ""
+        verdict = validate_answer(answer, state)
+        print(f"    [SELF-CHECK] complete={verdict['complete']} {verdict['missing']}")
+        if verdict["complete"]:
+            print("\n" + "=" * 60 + f"\nFINAL ANSWER:\n{answer}\n" + "=" * 60)
+            return
+        messages += [{"role": "assistant", "content": answer},
+                     {"role": "user", "content": f"Missing: {verdict['missing']}. Use the tools, then answer."}]
+        continue
     print("[AGENT] reached max steps without a final answer.")
 # >>>>> END MERGE SECTION 4 >>>>>
 
