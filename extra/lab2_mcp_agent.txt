@@ -7,13 +7,10 @@ tools to call and when to stop. This demonstrates:
 
 * **LLM-Driven Control Flow**: Agent loop runs until LLM says "DONE"
 * **Dynamic Tool Selection**: LLM chooses which MCP tool to invoke each step
-* **Flexible Reasoning**: Can handle queries requiring different tool sequences
 * **TAO Protocol**: Full thought/action/observation trace with real agent behavior
 
-Example Flows:
-1. Standard: geocode → get_weather → convert_c_to_f → DONE
-2. With coords: get_weather → convert_c_to_f → DONE (skip geocode)
-3. Celsius OK: geocode → get_weather → DONE (skip conversion)
+Example Flow:
+geocode → get_weather → convert_c_to_f → DONE
 
 Prerequisites: FastMCP weather server must be running on localhost:8000
 """
