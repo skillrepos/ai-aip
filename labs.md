@@ -393,14 +393,14 @@ Tell me about HQ
 
 Follow the tagged debug lines to see the agent thinking:
    - `[AGENT] step N` - the model is being asked what to do next.
-   - `[AGENT decision] call tool: ...` - the tool the **model** chose, with its arguments.
+   - `[AGENT decision] call <tool>(<args>)` - the tool the **model** chose, with its arguments.
    - `[RAG]` / `[GROUND]` - the retrieval and the office->city grounding check.
    - `[observation]` - the tool's result fed back to the model.
    - `[SELF-CHECK]` - validating the answer is grounded, then the `FINAL ANSWER`.
 
    The model - not the code - chose those tool calls. 
 
-![Running agent](./images/aip61.png?raw=true "Running agent") 
+![Running agent](./images/aip50.png?raw=true "Running agent") 
 
 <br><br>
 
@@ -422,22 +422,22 @@ There is no "Eastern office" in the data. Watch the agent call `distance_to` for
 Which is closer to me, HQ or the Midwest office?
 ```
 
-Watch it call `distance_to` for BOTH offices and compare the real distances in its final answer. What you may see is that it gets the answer wrong. The smaller 8B model we're using can't always reliably do the "smaller = closer" deduction.
+Watch it call `distance_to` for BOTH offices, then compare the distances in its final answer. What you may see is that it gets the answer wrong - it retrieves the *right* numbers but picks the *wrong* office. The catch: we're making the **model** eyeball which number is smaller, and small models do that kind of arithmetic unreliably. Hold onto that clue - it points straight at the fix in the next step.
 
 ![Running agent](./images/aip52.png?raw=true "Running agent") 
 
 
 <br><br>
 
-7. Let's try the operation again with a larger model. In the terminal, stop the running agent with `exit` and update the model we're using with the command below.
+7. **The real fix isn't a bigger model - it's a better tool.** The model flubs the answer because we're asking it to *eyeball* which distance is smaller - arithmetic the model does unreliably. Instead, hand it a tool that does the comparison in code. Stop the agent with `exit`, then enable the comparison tool:
 
 ```
-export AGENT_MODEL=llama-3.3-70b-versatile
+export USE_COMPARE_TOOL=1
 ```
 
 <br><br>
 
-8. Now, start the agent again and try running the same query from step 6 again. This time you will likely see the AI provide the right answer.
+8. Start the agent again and run the **same query from step 6**, still on the 8B model. Confirm the top line now shows `compare_tool=on`. This time the agent calls `compare_distances` - watch for the `[COMPARE]` line listing both offices ranked by miles - and answers correctly, because the "smaller = closer" deduction now happens deterministically in code instead of in the model's head.
 
 ```
 Which is closer to me, HQ or the Midwest office?
@@ -459,6 +459,7 @@ In this lab, you:
 - Built a model-driven agentic RAG agent that uses **native tool-calling** to decide its own tool calls.
 - Watched it **retrieve, ground office names to real cities, decompose** multi-part questions, **self-check**, and either answer or **honestly decline**.
 - Saw, in the debug output, the agentic-RAG pillars in action: multi-step reasoning, live tools & APIs, and self-checks & retries.
+- Learned a core agentic lesson: when the model is unreliable at something **deterministic** (here, comparing distances), move that work into a **tool** - don't just reach for a bigger model.
 
 <p align="center">
 **[END OF LAB]**
