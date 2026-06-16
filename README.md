@@ -78,9 +78,7 @@ echo "provider=$AGENT_PROVIDER  key=$([ -n "$GROQ_API_KEY" ] && echo set || echo
 
 You should see `provider=groq  key=set`.
 
-![Getting API key](./images/aip42.png?raw=true "Getting API key")
-
-![Getting API key](./images/aip44.png?raw=true "Getting API key")
+![Getting API key](./images/aip59.png?raw=true "Getting API key")
 
 <br><br>
 
