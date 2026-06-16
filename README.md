@@ -59,26 +59,15 @@ e. **Copy the key** (you can't view it again later).
 
 ![Copy the key](./images/aip58.png?raw=true "Copy the key")
 
-f. Back in the codespace **TERMINAL**, run these commands to set your key for all terminals - paste your real key in place of `<paste-your-key-here>`:
+f. Back in the codespace **TERMINAL**, run the command below to set your key for all terminals. Paste your key when prompted and then hit *Enter*:
 
 ```
-export KEY=<paste-your-key-here>
-
-echo "export AGENT_PROVIDER=groq" >> ~/.bashrc
-echo "export GROQ_API_KEY=$KEY" >> ~/.bashrc
-
-source ~/.bashrc 
+source scripts/setup-key.sh
 ```
 
-g. Verify they're set (this does NOT print the key):
+Afterwards, you should see output that indicates two environment variables (AGENT_PROVIDER and GROQ_API_KEY) are set.
 
-```
-echo "provider=$AGENT_PROVIDER  key=$([ -n "$GROQ_API_KEY" ] && echo set || echo MISSING)"
-```
-
-You should see `provider=groq  key=set`.
-
-![Getting API key](./images/aip59.png?raw=true "Getting API key")
+![Getting API key](./images/aip60.png?raw=true "Getting API key")
 
 <br><br>
 
