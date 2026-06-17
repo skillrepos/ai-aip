@@ -1,7 +1,7 @@
 # Implementing AI Agents in Python
 ## Using frameworks, MCP, and RAG for agentic AI
 ## Session labs 
-## Revision 1.13 - 06/16/26
+## Revision 1.15 - 06/16/26
 
 **Follow the startup instructions in the README.md file IF NOT ALREADY DONE!**
 
@@ -885,13 +885,20 @@ Look at `test_real_agent_tool_selection()` - it checks:
 - Building agents that resist goal hijacking
 - The difference between vulnerable and hardened agents
 
+**NOTE:** It's possible that at this point, you might get an error from Groq about `Rate limit reached for model llama-3.1-8b-instant`. If you do, you can exit the running agent with `exit`. Then run the command below in the terminal.
+
+```
+export AGENT_MODEL=llama-3.3-70b-versatile
+```
+
+After this, restart the agent and try the prompt again.
+
 ---
 
 ### Steps
 
-1. Navigate to the `agents` directory and open the vulnerable enterprise agent:
+1. In the `agents` directory, open the vulnerable enterprise agent:
 ```
-cd agents
 code vulnerable_agent.py
 ```
 
