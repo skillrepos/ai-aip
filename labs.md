@@ -400,7 +400,7 @@ Follow the tagged debug lines to see the agent thinking:
 
    The model - not the code - chose those tool calls. 
 
-![Running agent](./images/aip50.png?raw=true "Running agent") 
+![Running agent](./images/aip61.png?raw=true "Running agent") 
 
 <br><br>
 
@@ -412,7 +412,7 @@ Which is closer to me, HQ or the Eastern office?
 
 There is no "Eastern office" in the data. Watch the agent call `distance_to` for HQ (the `[GROUND]` line resolves it to New York) and for "Eastern office" (the `[GROUND]` line reports **NOT FOUND**), then answer correctly that HQ is in New York and the Eastern office doesn't exist - listing the offices that do. It decomposed the question and refused to invent an office.
 
-![Running agent](./images/aip51.png?raw=true "Running agent") 
+![Running agent](./images/aip62.png?raw=true "Running agent") 
 
 <br><br>
 
@@ -443,11 +443,22 @@ export USE_COMPARE_TOOL=1
 Which is closer to me, HQ or the Midwest office?
 ```
 
-![Running agent](./images/aip53.png?raw=true "Running agent") 
+![Running agent](./images/aip64.png?raw=true "Running agent") 
 
 <br><br>
 
-9. Type `exit` when done.
+9. You can also try a more general `goal` (prompt). For example, try the one below:
+
+```
+Tell me about the Northeast office and give me an interesting fact about the city it's in.
+```
+This one draws on the model's training to come up with the fact and the RAG data to translate to the city.
+
+![Running agent](./images/aip65.png?raw=true "Running agent")
+
+<br><br>
+
+10. Type `exit` when done.
 
 <br><br>
 
