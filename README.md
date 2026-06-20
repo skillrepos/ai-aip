@@ -104,7 +104,7 @@ You can either open it in a separate browser instance or open it in the codespac
 
 1. Go to https://github.com/your_github_userid/codespaces
 2. Find the codespace in the list, right-click, and select *Open in browser*
-3. Repeat the step from the main section (#4) above to run the warmup script again.
+3. Repeat steps 5 & 6 from the main section above to set the Groq env keys and run the warmup script again.
 <br/><br/>
 
 
