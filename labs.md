@@ -193,7 +193,7 @@ code -d ../extra/lab2_mcp_agent.txt mcp_agent_v2.py
 
 6. Review and merge the changes as before. What we're highlighting in this step are the *System Prompt* **template** that drives the LLM - notice the tool list is **not** hardcoded in it, the connection with the MCP client at the /mcp/ endpoint, the **`list_tools()` discovery call** that asks the server what tools it offers, the code that turns those discovered tools into the prompt's tool list, and the mcp calls to the tools on the server. When finished, close the tab to save the changes as before.
 
-![Agent using MCP client code](./images/aip23.png?raw=true "Agent using MCP client code") 
+![Agent using MCP client code](./images/aip68.png?raw=true "Agent using MCP client code") 
 
 <br><br>
    
