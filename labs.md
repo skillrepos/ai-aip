@@ -1,7 +1,7 @@
 # Implementing AI Agents in Python
 ## Using frameworks, MCP, and RAG for agentic AI
 ## Session labs 
-## Revision 1.20 - 07/29/26
+## Revision 1.21 - 07/29/26
 
 **Follow the startup instructions in the README.md file IF NOT ALREADY DONE!**
 
@@ -78,9 +78,11 @@ code -d ../extra/lab1-code.txt agent1.py
 <br><br>
 
 5. Once you have run the command, you'll have a side-by-side view in your editor of the completed code and the agent1.py file.
-  You can merge each section of code into the agent1.py file by hovering over the middle bar and clicking on the arrows pointing right. Go through each section, look at the code, and then click to merge the changes in, one at a time.
+  You can merge each section of code into the agent1.py file by hovering over the middle bar and clicking on the arrows pointing right. Where you see a yellow "thought bubble" icon in the left gutter, you can hover over the **code** (not the icon) and get a popup that helps explain the change. 
+  
+  Go through each section, look at the code, and then click to merge the changes in, one at a time.
 
-![Side-by-side merge](./images/aip17.png?raw=true "Side-by-side merge") 
+![Side-by-side merge](./images/aip67.png?raw=true "Side-by-side merge") 
 
 <br><br>
 
