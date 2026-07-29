@@ -1,11 +1,11 @@
 # Implementing AI Agents in Python
 ## Using frameworks, MCP, and RAG for agentic AI
 ## Session labs 
-## Revision 1.15 - 06/16/26
+## Revision 1.16 - 07/28/26
 
 **Follow the startup instructions in the README.md file IF NOT ALREADY DONE!**
 
-**If you have to restart your codespace, for best performance, you may need to repeat steps 4 and 5 in the README to set your Groq key and warmup the Codespace again.** 
+**If you have to restart your codespace, for best performance, you may need to repeat steps 5 and 6 in the README to set your Groq key and warmup the Codespace again.** 
 
 **NOTE: To copy and paste in the codespace, you may need to use keyboard commands - CTRL-C and CTRL-V. Chrome may work best for this.**
 
@@ -261,7 +261,7 @@ python curr_conv_agent.py
 5. As it starts, look for the model line at the top - it confirms which model you're using:
 
 ```
-[MODEL] provider=groq  model=groq/llama-3.1-8b-instant      (if you set up Groq)
+[MODEL] provider=groq  model=groq/qwen/qwen3.6-27b      (if you set up Groq)
 [MODEL] provider=ollama  model=ollama_chat/llama3.2          (local fallback)
 ```
 
@@ -338,7 +338,7 @@ convert 300
 - **Live tools & APIs** - retrieval + geocoding + distance + LLM facts.
 - **Self-checks & retries** - a validation gate; the agent retries or honestly declines.
 
-> **Model note:** because this is model-driven, it needs a capable model. We'll use the free hosted **8B on Groq** (Step 1). The local `llama3.2` default is not reliable enough for this multi-tool agent. 
+> **Model note:** because this is model-driven, it needs a capable model. We'll use the free hosted **qwen3.6-27b model on Groq** (Step 1). The local `llama3.2` default is not reliable enough for this multi-tool agent. 
 
 ---
 
@@ -378,7 +378,7 @@ Merge the **four clearly-marked sections** in turn - each has a `>>>>> MERGE SEC
 python agentic_rag_agent.py
 ```
 
-At the top you should see `[AGENT] provider=groq  model=llama-3.1-8b-instant`, confirming it's using the hosted model.
+At the top you should see `[AGENT] provider=groq  model=qwen/qwen3.6-27b`, confirming it's using the hosted model.
 
 
    ![Running agent](./images/aip49.png?raw=true "Running agent") 
@@ -437,7 +437,7 @@ export USE_COMPARE_TOOL=1
 
 <br><br>
 
-8. Start the agent again and run the **same query from step 6**, still on the 8B model. Confirm the top line now shows `compare_tool=on`. This time the agent calls `compare_distances` - watch for the `[COMPARE]` line listing both offices ranked by miles - and answers correctly, because the "smaller = closer" deduction now happens deterministically in code instead of in the model's head.
+8. Start the agent again and run the **same query from step 6**, still on the qwen3.6-27b model. Confirm the top line now shows `compare_tool=on`. This time the agent calls `compare_distances` - watch for the `[COMPARE]` line listing both offices ranked by miles - and answers correctly, because the "smaller = closer" deduction now happens deterministically in code instead of in the model's head.
 
 ```
 Which is closer to me, HQ or the Midwest office?
@@ -885,10 +885,10 @@ Look at `test_real_agent_tool_selection()` - it checks:
 - Building agents that resist goal hijacking
 - The difference between vulnerable and hardened agents
 
-**NOTE:** It's possible that at this point, you might get an error from Groq about `Rate limit reached for model llama-3.1-8b-instant`. If you do, you can exit the running agent with `exit`. Then run the command below in the terminal.
+**NOTE:** It's possible that at this point, you might get an error from Groq about `Rate limit reached for model qwen/qwen3.6-27b`. If you do, you can exit the running agent with `exit`. Then fall back to the local model for this lab (the security defenses are deterministic and work on any model) by running the command below in the terminal.
 
 ```
-export AGENT_MODEL=llama-3.3-70b-versatile
+unset AGENT_PROVIDER
 ```
 
 After this, restart the agent and try the prompt again.

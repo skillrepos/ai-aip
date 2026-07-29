@@ -32,7 +32,7 @@ DEFAULT_LOCATION = {"city": "Raleigh, NC", "lat": 35.7796, "lon": -78.6382}
 USE_GROQ = os.environ.get("AGENT_PROVIDER", "").strip().lower() == "groq" and os.environ.get("GROQ_API_KEY", "").strip()
 if USE_GROQ:
     client = OpenAI(base_url="https://api.groq.com/openai/v1", api_key=os.environ["GROQ_API_KEY"].strip())
-    MODEL = os.environ.get("AGENT_MODEL", "llama-3.1-8b-instant").strip()
+    MODEL = os.environ.get("AGENT_MODEL", "qwen/qwen3.6-27b").strip()
 else:
     client = OpenAI(base_url="http://localhost:11434/v1", api_key="ollama")
     MODEL = os.environ.get("AGENT_MODEL", "llama3.2").strip()
