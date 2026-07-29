@@ -238,6 +238,8 @@ def get_forecast(lat: float, lon: float) -> dict:
             "tomorrow_low_c": daily["temperature_2m_min"][1]}
 ```
 
+![Adding new tool](./images/aip69.png?raw=true "Adding new tool")
+
 <br><br>
 
 10. Now restart the server and re-run the discovery script and the agent. **Note that you are not changing a single line of the agent's code.** In the first (server) terminal, run:
