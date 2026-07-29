@@ -1,0 +1,353 @@
+{
+  "files": {
+    "extra/lab1-code.txt": [
+      {
+        "anchor": "\"\"\"",
+        "title": "Build the weather request",
+        "note": "**Builds the Open-Meteo forecast URL from the lat/lon the agent extracted.** This is the tool the LLM will call to get real data."
+      },
+      {
+        "anchor": "r = requests.get(url, timeout=15)",
+        "endAnchor": "}",
+        "title": "Call the API, return the forecast",
+        "note": "**Fetches the forecast and returns a tidy dict (high, low, conditions).** That dict becomes the agent's Observation."
+      },
+      {
+        "anchor": "TOOLS = {",
+        "title": "Tool registry",
+        "note": "**Maps tool names to functions** so the agent can look up and call whichever tool the LLM names."
+      },
+      {
+        "anchor": "llm = ChatOllama(model=\"llama3.2\", temperature=0.0)",
+        "title": "The LLM 'brain'",
+        "note": "**The local Ollama model the agent reasons with.** temperature=0 keeps its tool choices deterministic."
+      },
+      {
+        "anchor": "\"\"\"Execute the TAO loop, letting the AI decide which tools to call.\"\"\"",
+        "title": "Seed the conversation",
+        "note": "**Starts the message list with the system prompt and the user's question** \u2014 the input to the Thought\u2192Action\u2192Observation loop."
+      },
+      {
+        "anchor": "# Get AI's next step",
+        "title": "Ask the model what to do",
+        "note": "**Each turn, send the messages to the LLM and print its Thought/Action.** The reply decides whether a tool runs next."
+      },
+      {
+        "anchor": "action_line = response.split(\"Action:\")[1].split(\"\\n\")[0].strip()",
+        "title": "Parse Action and Args",
+        "note": "**Pulls the tool name and JSON arguments out of the model's text.** How free-text becomes a concrete tool call."
+      },
+      {
+        "anchor": "tool_name = action_line",
+        "title": "Look up the chosen tool",
+        "note": "**Finds the function for the tool the model named** (via the TOOLS registry)."
+      },
+      {
+        "anchor": "args = json.loads(args_text)",
+        "endAnchor": "observation = tool_func(**args)",
+        "title": "Run the tool",
+        "note": "**Parses the JSON args and actually calls the tool.** Its return value is the Observation fed back to the model."
+      },
+      {
+        "anchor": "messages.append({\"role\": \"assistant\", \"content\": response})",
+        "endAnchor": "messages.append({\"role\": \"user\", \"content\": f\"Observation: {observation}\"})",
+        "title": "Feed the result back",
+        "note": "**Adds the model's step and the tool's Observation to history** so the next loop turn has context."
+      },
+      {
+        "anchor": "You are a weather agent with one tool:",
+        "title": "System prompt: the agent's role",
+        "note": "**Opens the ReAct system prompt \u2014 tells the model it is a weather agent with one tool.** The persona that frames every turn."
+      },
+      {
+        "anchor": "get_weather(lat:float, lon:float)",
+        "endAnchor": "5. After \"Final:\" output ONLY plain text - do NOT use Thought/Action/Args format",
+        "title": "System prompt: tool + TAO format",
+        "note": [
+          "**Defines the tool and the exact Thought/Action/Args format the model must emit**, with worked examples.",
+          "- CRITICAL RULES: never hallucinate results; stop after Action and wait for the Observation",
+          "- After \"Final:\" it switches to plain text \u2014 no more Thought/Action"
+        ]
+      }
+    ],
+    "extra/lab2_mcp_server.txt": [
+      {
+        "anchor": "def get_weather(lat: float, lon: float) -> dict:",
+        "lines": 1,
+        "title": "Weather MCP tool",
+        "note": "**Defines the get_weather tool.** FastMCP turns the typed args (lat, lon) into the tool's JSON schema automatically."
+      },
+      {
+        "anchor": "\"https://api.open-meteo.com/v1/forecast\"",
+        "endAnchor": ")",
+        "title": "Build the forecast URL",
+        "note": "**Constructs the Open-Meteo current-weather request from lat/lon.**"
+      },
+      {
+        "anchor": "# Extract and return weather data",
+        "title": "Return the weather dict",
+        "note": "**Parses the API response into temperature, code, and a friendly conditions string** \u2014 the tool's result."
+      },
+      {
+        "anchor": "def convert_c_to_f(c: float) -> float:",
+        "title": "Celsius\u2192Fahrenheit tool",
+        "note": "**A second MCP tool.** The client agent chains get_weather \u2192 convert_c_to_f."
+      },
+      {
+        "anchor": "url = \"https://geocoding-api.open-meteo.com/v1/search\"",
+        "endAnchor": "last_error = None",
+        "title": "Geocoding tool endpoint",
+        "note": "**Sets up the location-name \u2192 lat/lon lookup** used by the geocode tool."
+      },
+      {
+        "anchor": "mcp.run(",
+        "title": "Start the MCP server",
+        "note": [
+          "**Serves the tools over streamable HTTP at /mcp/ on port 8000.**",
+          "- The client agent connects here; runs until Ctrl-C"
+        ]
+      }
+    ],
+    "extra/lab2_mcp_agent.txt": [
+      {
+        "anchor": "async def run_dynamic(city: str, max_steps: int = 10) -> None:",
+        "lines": 8,
+        "title": "The dynamic agent loop",
+        "note": "**Entry point: an async TAO loop where the LLM decides which MCP tool to call each step.** max_steps guards against infinite loops."
+      },
+      {
+        "anchor": "print(\"\\n\" + \"=\"*60)",
+        "endAnchor": "}",
+        "title": "Set up run context",
+        "note": "**Prints the banner and creates a context dict** to accumulate results (coords, temps, conditions) across steps."
+      },
+      {
+        "anchor": "# Get LLM's decision",
+        "endAnchor": "return",
+        "title": "Get and parse the decision",
+        "note": "**Asks the LLM for its next Action and extracts it with a regex.** Bails out cleanly if no Action is found."
+      },
+      {
+        "anchor": "# Dynamically call the tool the LLM selected",
+        "title": "Announce the tool call",
+        "note": "**Logs which MCP tool the model chose and its arguments** \u2014 the visible trace of the agent's decision."
+      },
+      {
+        "anchor": "result = unwrap(await mcp.call_tool(action, args))",
+        "lines": 1,
+        "title": "Call the tool over MCP",
+        "note": "**Invokes the chosen tool on the server through the MCP client** and unwraps the response."
+      },
+      {
+        "anchor": "context[\"temperature_f\"] = float(result)",
+        "endAnchor": "messages.append({\"role\": \"user\", \"content\": observation})",
+        "title": "Record result, feed back",
+        "note": "**Stores the tool result and appends the Observation to the message history** so the loop can keep reasoning."
+      },
+      {
+        "anchor": "geocode_location(name: str)",
+        "endAnchor": "Do NOT add extra text. Do NOT explain after your three lines.",
+        "title": "System prompt: tools + TAO format",
+        "note": [
+          "**Lists the three MCP tools the agent may call and pins the strict 3-line Thought/Action/Args format.**",
+          "- Action: DONE signals the agent is finished",
+          "- Examples show the exact JSON args for each tool"
+        ]
+      }
+    ],
+    "extra/curr_conv_agent.txt": [
+      {
+        "anchor": "MEMORY_FILE = \"currency_memory.json\"",
+        "endAnchor": "memory = load_memory()",
+        "title": "Persistent memory",
+        "note": "**Loads and saves conversion state + history to a JSON file** so the agent remembers across runs. This is the lab's memory feature."
+      },
+      {
+        "anchor": "@tool",
+        "endAnchor": "raise RuntimeError(f\"Failed to fetch rate from {from_currency} to {to_currency}\")",
+        "title": "Live FX-rate tool",
+        "note": "**A smolagents @tool that fetches a real exchange rate** (with a backup URL). The agent calls it to get live data."
+      },
+      {
+        "anchor": "def calculate(expression: str) -> float:",
+        "endAnchor": "raise RuntimeError(f\"Calculation error: {e}\")",
+        "title": "Calculator tool",
+        "note": [
+          "**A second @tool that safely evaluates arithmetic** (amount \u00d7 rate).",
+          "- Kept separate so the agent chains rate \u2192 math"
+        ]
+      },
+      {
+        "anchor": "agent = CodeAgent(",
+        "title": "Build the CodeAgent",
+        "note": "**Creates the smolagents CodeAgent with the two tools.** A CodeAgent writes Python to call them, rather than emitting JSON."
+      },
+      {
+        "anchor": "# 1) Full form: amount + source + \"to\" + target",
+        "endAnchor": "to  = memory[\"last_to\"]",
+        "title": "Parse input, fill from memory",
+        "note": "**Four regex patterns parse the query; missing pieces are filled from memory.** This is what lets a bare 'Convert 200' reuse the last currencies."
+      },
+      {
+        "anchor": "if low in (\"exit\", \"quit\"):",
+        "title": "exit / history commands",
+        "note": "**Handles the 'exit' and 'history' commands** before treating input as a conversion."
+      },
+      {
+        "anchor": "result = agent.run(prompt)",
+        "title": "Run the agent",
+        "note": "**Hands the normalized prompt to the agent** and gets the converted amount back."
+      },
+      {
+        "anchor": "memory[\"history\"].append({\"query\": user_input, \"amount\": amt,",
+        "title": "Save to history",
+        "note": "**Records this conversion and updates memory** so the 'history' command can show it later."
+      }
+    ],
+    "extra/agentic_rag_agent.txt": [
+      {
+        "anchor": "# Lab \"fix\" toggle: when USE_COMPARE_TOOL=1, expose a deterministic compare_distances",
+        "title": "Compare-tool toggle",
+        "note": "**Reads USE_COMPARE_TOOL.** Off by default so you first watch the model try 'which is closer' itself \u2014 then flip it on for the fix."
+      },
+      {
+        "anchor": "# search_documents -> RAG retrieval (the model may call it again with a better query)",
+        "endAnchor": "DISPATCH = {\"search_documents\": search_documents, \"distance_to\": distance_to, \"city_facts\": city_facts}",
+        "title": "The agent's tools",
+        "note": [
+          "**All the tools the model can call: RAG search, office\u2192city grounding, distance, compare, and city facts.**",
+          "- ground_office refuses to invent offices not in the docs",
+          "- compare_distances ranks in code \u2014 the deterministic fix"
+        ]
+      },
+      {
+        "anchor": "# TOOLS_SCHEMA is the standard OpenAI-style tool schema. We pass it straight to the",
+        "endAnchor": "\"and list the ones that do - never invent one. Keep answers concise; finish with plain text.\")",
+        "title": "Tool schemas + system prompt",
+        "note": "**The JSON schemas that enable native tool-calling, plus the system rules** (search first, never invent an office). compare_distances is added only when the toggle is on."
+      },
+      {
+        "anchor": "if not (answer or \"\").strip():",
+        "endAnchor": "return {\"complete\": False, \"missing\": \"no documents retrieved - search first\"}",
+        "title": "Self-check gate",
+        "note": "**Rejects answers that are empty or ungrounded (no docs retrieved).** Forces the agent to retrieve before it can answer."
+      },
+      {
+        "anchor": "state = {\"start\": start, \"retrieved\": []}",
+        "endAnchor": "print(\"[AGENT] reached max steps without a final answer.\")",
+        "title": "The model-driven loop",
+        "note": "**The core loop: the model either calls tools (run them, feed results back) or gives a final answer that gets self-checked.** The model \u2014 not the code \u2014 drives each step."
+      }
+    ],
+    "extra/lab5-code.txt": [
+      {
+        "anchor": "booking_agent = Agent(",
+        "title": "Define the agent",
+        "note": "**One CrewAI agent with a role, goal, and backstory.** Later in the lab you add two more and split the work among them."
+      },
+      {
+        "anchor": "extract_travel_info_task = Task(",
+        "title": "Task: extract trip info",
+        "note": "**Pulls destination and date from the request.** Every Task has a description, an owning agent, and an expected_output."
+      },
+      {
+        "anchor": "find_flights_task = Task(",
+        "title": "Task: find flights",
+        "note": "**Finds available flights for the extracted trip.**"
+      },
+      {
+        "anchor": "present_flights_task = Task(",
+        "title": "Task: present options",
+        "note": "**Formats the flights for the user to choose from.**"
+      },
+      {
+        "anchor": "book_flight_task = Task(",
+        "title": "Task: book the flight",
+        "note": "**Books the chosen flight** \u2014 note `function=` runs real Python here, not just the LLM."
+      },
+      {
+        "anchor": "crew = Crew(",
+        "title": "Assemble the crew",
+        "note": "**Bundles the agent(s) and tasks and runs them sequentially.** crew.kickoff() starts the workflow."
+      }
+    ],
+    "extra/reflect_agent.txt": [
+      {
+        "anchor": "code_writer = AssistantAgent(",
+        "lines": 24,
+        "title": "Writer, critic, fixer agents",
+        "note": "**The three roles of the reflective pattern: one writes code, one reviews it (PASS/FAIL), one fixes it.** Each is an AG2 AssistantAgent with a focused system message."
+      },
+      {
+        "anchor": "def simulate_runtime_feedback(code: str) -> str:",
+        "endAnchor": "os.remove(temp_path)",
+        "title": "Execute the generated code",
+        "note": [
+          "**Runs the generated code in a subprocess and captures output/errors.**",
+          "- This real runtime feedback is what makes the critique execution-aware"
+        ]
+      },
+      {
+        "anchor": "messages = [{\"role\": \"user\", \"content\": task}]",
+        "title": "Generate code",
+        "note": "**The writer agent produces the first draft of code** for the user's request."
+      },
+      {
+        "anchor": "print(\"\\nSimulating runtime behavior...\")",
+        "title": "Simulate + get feedback",
+        "note": "**Cleans and runs the draft to see whether it actually executes.**"
+      },
+      {
+        "anchor": "print(\"\\nCritiquing code...\")",
+        "title": "Critique (PASS/FAIL)",
+        "note": "**The critic judges the code against the request AND its runtime behavior,** returning PASS or FAIL: reason."
+      },
+      {
+        "anchor": "if critique.strip().lower().startswith(\"fail\"):",
+        "endAnchor": "print(\"\\nOriginal code passed review.\\n\")",
+        "title": "Fix on FAIL",
+        "note": "**If the critique failed, the fixer revises the code and it's re-run.** generate \u2192 evaluate \u2192 revise \u2192 re-simulate: the reflection loop."
+      }
+    ],
+    "extra/secure_agent.txt": [
+      {
+        "anchor": "event = {",
+        "title": "Layer 1: security logging",
+        "note": "**Writes a timestamped JSON audit line for every security event** \u2014 the forensic trail."
+      },
+      {
+        "anchor": "user_lower = user_input.lower()",
+        "endAnchor": "return False, f\"Reference to restricted tool: '{tool_name}'\"",
+        "title": "Layer 3: input validation",
+        "note": [
+          "**Blocks common prompt-injection phrasings and mentions of dangerous tools BEFORE the LLM sees them.**",
+          "- First line of defense \u2014 fast, free, no LLM call",
+          "- You'll trip these exact patterns with the attack prompts"
+        ]
+      },
+      {
+        "anchor": "SYSTEM_PROMPT = \"\"\"You are OmniTech's HR Benefits Assistant. You help employees check their benefits and PTO balances.",
+        "endAnchor": "\"\"\"",
+        "title": "Layer 4: hardened prompt",
+        "note": "**A system prompt with explicit security rules that user messages can't override.** Defense in depth \u2014 never relied on alone."
+      },
+      {
+        "anchor": "response_lower = str(response).lower()",
+        "endAnchor": "return False, description",
+        "title": "Layer 5: output validation",
+        "note": "**Scans the model's response for signs a dangerous action happened** (exports, emails, salary changes) before it's shown."
+      },
+      {
+        "anchor": "# Pre-validation: check input before it reaches the LLM",
+        "title": "Wire in input checks",
+        "note": "**Runs validate_input at the top of the chat loop and blocks + logs anything suspicious** before the LLM is called."
+      },
+      {
+        "anchor": "# Post-validation: check output before showing to user",
+        "endAnchor": "log_security_event(\"REQUEST_OK\", f\"Handled query successfully\")",
+        "title": "Wire in output checks",
+        "note": "**Validates the response and logs the outcome** \u2014 completing the pre- and post-LLM defense sandwich."
+      }
+    ]
+  }
+}

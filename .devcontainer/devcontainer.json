@@ -38,5 +38,7 @@
         }
     },
     "postCreateCommand": "bash -i scripts/pysetup.sh py_env && bash -i scripts/startOllama.sh",
-    "postStartCommand" : "nohup bash -c 'ollama serve &'"
+    "postStartCommand" : "nohup bash -c 'ollama serve &'",
+    // Install the local Merge Info extension (.vsix) once VS Code attaches; never blocks attach.
+    "postAttachCommand": "code --install-extension ${containerWorkspaceFolder}/.devcontainer/merge-info-0.1.0.vsix --force || true"
 }
