@@ -1,7 +1,7 @@
 # Implementing AI Agents in Python
 ## Using frameworks, MCP, and RAG for agentic AI
 ## Session labs 
-## Revision 1.17 - 07/29/26
+## Revision 1.20 - 07/29/26
 
 **Follow the startup instructions in the README.md file IF NOT ALREADY DONE!**
 
@@ -65,6 +65,8 @@ code agent1.py
 <br><br>
 
 3. If you scroll through this file, you can see it outlines the steps the agent will go through without all the code. When you are done looking at it, close the file by clicking on the "X" in the tab at the top of the file.
+
+![Close file](./images/aip66.png?raw=true "Close file") 
 
 <br><br>
 
