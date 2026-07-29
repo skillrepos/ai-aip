@@ -110,16 +110,19 @@
     ],
     "extra/lab2_mcp_agent.txt": [
       {
-        "anchor": "async def run_dynamic(city: str, max_steps: int = 10) -> None:",
-        "lines": 8,
+        "anchor": "async def run_dynamic(city: str, question: str, max_steps: int = 10) -> None:",
+        "lines": 9,
         "title": "The dynamic agent loop",
         "note": "**Entry point: an async TAO loop where the LLM decides which MCP tool to call each step.** max_steps guards against infinite loops."
       },
       {
         "anchor": "print(\"\\n\" + \"=\"*60)",
         "endAnchor": "}",
-        "title": "Set up run context",
-        "note": "**Prints the banner and creates a context dict** to accumulate results (coords, temps, conditions) across steps."
+        "title": "Set up the results list",
+        "note": [
+          "**Prints the banner and creates `gathered`** - the running list of `(tool name, result)` pairs.",
+          "- A plain list, not fixed weather fields, because the tool set comes from discovery"
+        ]
       },
       {
         "anchor": "# Get LLM's decision",
@@ -143,10 +146,13 @@
         "note": "**Invokes the chosen tool on the server through the MCP client** and unwraps the response."
       },
       {
-        "anchor": "context[\"temperature_f\"] = float(result)",
+        "anchor": "# Record the result - by tool name, whatever the tool happened to be",
         "endAnchor": "messages.append({\"role\": \"user\", \"content\": observation})",
         "title": "Record result, feed back",
-        "note": "**Stores the tool result and appends the Observation to the message history** so the loop can keep reasoning."
+        "note": [
+          "**Stores every tool result by name and appends the Observation to the message history.**",
+          "- Nothing here names a specific tool, so a tool added to the server later is recorded too"
+        ]
       },
       {
         "anchor": "The tools below were discovered from the MCP server at runtime.",
@@ -184,7 +190,10 @@
       {
         "anchor": "messages = [",
         "title": "Seed messages from discovery",
-        "note": "**The system message is `build_system_prompt(tools)` - built from what the server just advertised.**"
+        "note": [
+          "**The system message is `build_system_prompt(tools)` - built from what the server just advertised.**",
+          "- The user message is the question you typed, passed through untouched"
+        ]
       },
       {
         "anchor": "# Only tools the server actually advertised can be called",

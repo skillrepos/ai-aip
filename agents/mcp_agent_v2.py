@@ -91,15 +91,10 @@ def extract_city(prompt: str) -> Optional[str]:
         print("Dynamic TAO Agent - LLM Controls Tool Selection")
         print("="*60 + "\n")
 
-        # Store context for final answer
-        context = {
-            "city": city,
-            "latitude": None,
-            "longitude": None,
-            "temperature_c": None,
-            "temperature_f": None,
-            "conditions": None,
-        }
+        # What the agent has learned so far: (tool name, result) per call.
+        # Deliberately NOT a fixed set of weather fields - the agent does not
+        # know in advance which tools the server will advertise.
+        gathered = []
 
         for step in range(1, max_steps + 1):
             print(f"[Step {step}]")
@@ -111,18 +106,14 @@ def extract_city(prompt: str) -> Optional[str]:
                 print("Agent has gathered sufficient information!")
                 print("="*60)
 
-                # Generate final summary
-                if context["temperature_f"] is not None:
-                    temp_display = f"{context['temperature_f']:.1f}°F"
-                elif context["temperature_c"] is not None:
-                    temp_display = f"{context['temperature_c']:.1f}°C"
-                else:
-                    temp_display = "Unknown"
-
-                print(f"\nFinal Answer:")
-                print(f"  Location: {context.get('location_name', city)}")
-                print(f"  Conditions: {context['conditions'] or 'Unknown'}")
-                print(f"  Temperature: {temp_display}")
+                # Report what the agent actually collected. Nothing here names a
+                # specific tool, so this works for whatever the server advertises -
+                # including a tool added long after this code was written.
+                print(f"\nFinal Answer for: {question}")
+                for name, value in gathered:
+                    print(f"  {name} -> {json.dumps(value) if isinstance(value, dict) else value}")
+                if not gathered:
+                    print("  (no tools were called)")
                 return
 
 
@@ -156,22 +147,11 @@ def extract_city(prompt: str) -> Optional[str]:
                 messages.append({"role": "user", "content": f"Observation: {result}"})
                 continue
 
-            # Store relevant data in context
-            if action == "geocode_location" and isinstance(result, dict):
-                context["latitude"] = result.get("latitude")
-                context["longitude"] = result.get("longitude")
-                context["location_name"] = result.get("name", city)
-            elif action == "get_weather" and isinstance(result, dict):
-                context["temperature_c"] = result.get("temperature")
-                context["conditions"] = result.get("conditions")
-            elif action == "convert_c_to_f":
-                context["temperature_f"] = float(result)
         # Max steps reached
         print(f"\n⚠️  Reached maximum steps ({max_steps}) without completion")
         print("Partial information gathered:")
-        for key, value in context.items():
-            if value is not None:
-                print(f"  {key}: {value}")
+        for name, value in gathered:
+            print(f"  {name} -> {value}")
 
 # ╔══════════════════════════════════════════════════════════════════╗
 # ║ 6.  Interactive REPL                                             ║
@@ -195,5 +175,5 @@ if __name__ == "__main__":
             continue
 
         print(f"\n🔍 Detected city: {city}")
-        asyncio.run(run_dynamic(city))
+        asyncio.run(run_dynamic(city, raw_prompt))
         print()

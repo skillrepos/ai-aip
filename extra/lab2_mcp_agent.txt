@@ -172,12 +172,13 @@ def extract_city(prompt: str) -> Optional[str]:
 # ╔══════════════════════════════════════════════════════════════════╗
 # ║ 5.  Dynamic TAO loop with LLM-controlled tool selection          ║
 # ╚══════════════════════════════════════════════════════════════════╝
-async def run_dynamic(city: str, max_steps: int = 10) -> None:
+async def run_dynamic(city: str, question: str, max_steps: int = 10) -> None:
     """
     Run a dynamic TAO agent loop where the LLM decides which tools to call.
 
     Args:
         city: The city to query about
+        question: The user's question, passed to the LLM as-is
         max_steps: Maximum number of tool calls to prevent infinite loops
     """
     llm = ChatOllama(model="llama3.2", temperature=0.0)
@@ -194,28 +195,29 @@ async def run_dynamic(city: str, max_steps: int = 10) -> None:
 
         messages = [
             {"role": "system", "content": build_system_prompt(tools)},
-            {"role": "user", "content": f"What is the current weather in {city}?"},
+            {"role": "user", "content": question},
         ]
 
         print("\n" + "="*60)
         print("Dynamic TAO Agent - LLM Controls Tool Selection")
         print("="*60 + "\n")
 
-        # Store context for final answer
-        context = {
-            "city": city,
-            "latitude": None,
-            "longitude": None,
-            "temperature_c": None,
-            "temperature_f": None,
-            "conditions": None,
-        }
+        # What the agent has learned so far: (tool name, result) per call.
+        # Deliberately NOT a fixed set of weather fields - the agent does not
+        # know in advance which tools the server will advertise.
+        gathered = []
 
         for step in range(1, max_steps + 1):
             print(f"[Step {step}]")
 
             # Get LLM's decision
             response = llm.invoke(messages).content.strip()
+
+            # Small models sometimes plan several steps at once. Keep only the
+            # FIRST Thought/Action/Args triple - the loop will ask again next turn.
+            triples = response.split("Thought:")
+            if len(triples) > 2:
+                response = "Thought:" + triples[1].rstrip()
             print(response)
 
             # Parse the action. Small models sometimes signal completion as a bare
@@ -235,18 +237,14 @@ async def run_dynamic(city: str, max_steps: int = 10) -> None:
                 print("Agent has gathered sufficient information!")
                 print("="*60)
 
-                # Generate final summary
-                if context["temperature_f"] is not None:
-                    temp_display = f"{context['temperature_f']:.1f}°F"
-                elif context["temperature_c"] is not None:
-                    temp_display = f"{context['temperature_c']:.1f}°C"
-                else:
-                    temp_display = "Unknown"
-
-                print(f"\nFinal Answer:")
-                print(f"  Location: {context.get('location_name', city)}")
-                print(f"  Conditions: {context['conditions'] or 'Unknown'}")
-                print(f"  Temperature: {temp_display}")
+                # Report what the agent actually collected. Nothing here names a
+                # specific tool, so this works for whatever the server advertises -
+                # including a tool added long after this code was written.
+                print(f"\nFinal Answer for: {question}")
+                for name, value in gathered:
+                    print(f"  {name} -> {json.dumps(value) if isinstance(value, dict) else value}")
+                if not gathered:
+                    print("  (no tools were called)")
                 return
 
             # Only tools the server actually advertised can be called
@@ -292,16 +290,8 @@ async def run_dynamic(city: str, max_steps: int = 10) -> None:
                 messages.append({"role": "user", "content": f"Observation: {result}"})
                 continue
 
-            # Store relevant data in context
-            if action == "geocode_location" and isinstance(result, dict):
-                context["latitude"] = result.get("latitude")
-                context["longitude"] = result.get("longitude")
-                context["location_name"] = result.get("name", city)
-            elif action == "get_weather" and isinstance(result, dict):
-                context["temperature_c"] = result.get("temperature")
-                context["conditions"] = result.get("conditions")
-            elif action == "convert_c_to_f":
-                context["temperature_f"] = float(result)
+            # Record the result - by tool name, whatever the tool happened to be
+            gathered.append((action, result))
 
             # Show observation
             observation = f"Observation: {json.dumps(result) if isinstance(result, dict) else result}"
@@ -315,9 +305,8 @@ async def run_dynamic(city: str, max_steps: int = 10) -> None:
         # Max steps reached
         print(f"\n⚠️  Reached maximum steps ({max_steps}) without completion")
         print("Partial information gathered:")
-        for key, value in context.items():
-            if value is not None:
-                print(f"  {key}: {value}")
+        for name, value in gathered:
+            print(f"  {name} -> {value}")
 
 # ╔══════════════════════════════════════════════════════════════════╗
 # ║ 6.  Interactive REPL                                             ║
@@ -341,5 +330,5 @@ if __name__ == "__main__":
             continue
 
         print(f"\n🔍 Detected city: {city}")
-        asyncio.run(run_dynamic(city))
+        asyncio.run(run_dynamic(city, raw_prompt))
         print()

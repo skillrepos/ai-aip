@@ -1,7 +1,7 @@
 # Implementing AI Agents in Python
 ## Using frameworks, MCP, and RAG for agentic AI
 ## Session labs 
-## Revision 1.22 - 07/29/26
+## Revision 1.23 - 07/29/26
 
 **Follow the startup instructions in the README.md file IF NOT ALREADY DONE!**
 
@@ -205,7 +205,7 @@ python mcp_agent_v2.py
 
 <br><br>
 
-8. The agent will start up and wait for you to prompt it about weather in a location. A suggested prompt is below. As soon as you enter it, the agent picks the city out of your question and then opens its MCP connection - printing the `Discovered 3 tool(s) from the MCP server` line - the agent learned its tools from the server rather than having them hardcoded. After that you'll be able to see similar TAO output. (The LLM decides which of the discovered tools it actually needs, so your run may skip one - for example supplying coordinates itself instead of calling *geocode_location*, or reporting °C instead of calling *convert_c_to_f*. That's the agent choosing, not an error.) And you'll also be able to see the server INFO messages in the other terminal as the MCP connections and events happen.
+8. The agent will start up and wait for you to prompt it about weather in a location. A suggested prompt is below. As soon as you enter it, the agent picks the city out of your question and then opens its MCP connection - printing the `Discovered 3 tool(s) from the MCP server` line - the agent learned its tools from the server rather than having them hardcoded. After that you'll be able to see similar TAO output. (The LLM decides which of the discovered tools it actually needs, so your run may use a different set than the screenshot - that's the agent choosing, not an error. The **Final Answer** lists each tool the agent called and what it returned.) And you'll also be able to see the server INFO messages in the other terminal as the MCP connections and events happen.
 
 ```
 What is the weather in New York?
@@ -248,16 +248,24 @@ def get_forecast(lat: float, lon: float) -> dict:
 python mcp_server_v2.py
 ```
 
-Then, in the second terminal, run the two commands below and prompt the agent about the weather in a city again.
+Then, in the second terminal, run the two commands below.
 
 ```
 python ../scripts/discover_tools.py
 python mcp_agent_v2.py
 ```
 
-The discovery script now lists **four** tools, and when you prompt the agent it reports `Discovered 4 tool(s)` with *get_forecast* among them - the new tool flowed straight from the server into the agent's prompt. That is the payoff of MCP discovery: change the server, and every agent that connects picks up the change automatically. (You can let the loop finish, or just `CTRL-C` once you've seen the discovery line.) When you're done, use 'exit' to stop the client and `CTRL-C` to stop the server.
+The discovery script now lists **four** tools, and when you prompt the agent it reports `Discovered 4 tool(s)` with *get_forecast* among them. Now ask the agent something that needs the new tool:
 
-![Agent discovering the new tool](./images/aip66.png?raw=true "Agent discovering the new tool")
+```
+What is tomorrow's forecast for New York?
+```
+
+Watch the TAO trace: the agent works out the coordinates, then calls `get_forecast` - a tool that did not exist the last time you ran this agent - and the **Final Answer** lists `get_forecast` along with the high and low it returned. That is the payoff of MCP discovery: **you added a tool to the server and the agent found it, understood its arguments, and used it - without a single change to the agent's code.** When you're done, use 'exit' to stop the client and `CTRL-C` to stop the server.
+
+![Agent using the newly discovered tool](./images/aip71.png?raw=true "Agent using the newly discovered tool")
+
+![Final answer including the new tool](./images/aip70.png?raw=true "Final answer including the new tool")
     
 <p align="center">
 **[END OF LAB]**
