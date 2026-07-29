@@ -132,6 +132,7 @@ Here's a clue: "If latitude/longitude is in the Southern or Western hemisphere, 
 
 **What it demonstrates about the framework**
 - Shows how **FastMCP** standardizes tool interfaces via JSON-RPC with minimal boilerplate.
+- Demonstrates **tool discovery** (`tools/list`) - the agent learns what tools exist from the server at runtime, so adding a tool to the server needs **no** change to the agent.
 - Provides clean separation between **tool hosting (server)** and **LLM reasoning (client)**.
 - Highlights protocol-first thinking and error-handling in agent execution.
 
@@ -167,7 +168,7 @@ python mcp_server_v2.py
 
 <br><br>
 
-4. We also have a small tool that can call the MCP *discover* method to find the list of tools from our server. This is just for demo purposes. You can take a look at the code either by clicking on [**scripts/discover_tools.py**](./scripts/discover_tools.py) or by entering the first command below in the codespace's terminal. The actual code here is minimal. It connects to our server and invokes the list_tools method. Run it with the second command below and you should see the list of tools like in the screenshot. (You may need to scroll up to see some of the previous output.)
+4. We also have a small tool that can call the MCP *discover* method to find the list of tools from our server. This is the same `list_tools()` discovery call the agent you build next makes for itself. You can take a look at the code either by clicking on [**scripts/discover_tools.py**](./scripts/discover_tools.py) or by entering the first command below in the codespace's terminal. The actual code here is minimal. It connects to our server and invokes the list_tools method. Run it with the second command below and you should see the list of tools like in the screenshot. (You may need to scroll up to see some of the previous output.)
 
 ```
 code ../scripts/discover_tools.py
@@ -186,7 +187,7 @@ code -d ../extra/lab2_mcp_agent.txt mcp_agent_v2.py
 
 <br><br>
 
-6. Review and merge the changes as before. What we're highlighting in this step are the *System Prompt* that drives the LLM used by the agent, the connection with the MCP client at the /mcp/ endpoint, and the mcp calls to the tools on the server. When finished, close the tab to save the changes as before.
+6. Review and merge the changes as before. What we're highlighting in this step are the *System Prompt* **template** that drives the LLM - notice the tool list is **not** hardcoded in it, the connection with the MCP client at the /mcp/ endpoint, the **`list_tools()` discovery call** that asks the server what tools it offers, the code that turns those discovered tools into the prompt's tool list, and the mcp calls to the tools on the server. When finished, close the tab to save the changes as before.
 
 ![Agent using MCP client code](./images/aip23.png?raw=true "Agent using MCP client code") 
 
@@ -200,7 +201,7 @@ python mcp_agent_v2.py
 
 <br><br>
 
-8. The agent should start up, and wait for you to prompt it about weather in a location. You'll be able to see similar TAO output. And you'll also be able to see the server INFO messages in the other terminal as the MCP connections and events happen. A suggested prompt is below.
+8. The agent should start up. Notice the `Discovered 3 tool(s) from the MCP server` line - the agent learned its tools from the server rather than having them hardcoded. It then waits for you to prompt it about weather in a location. You'll be able to see similar TAO output. And you'll also be able to see the server INFO messages in the other terminal as the MCP connections and events happen. A suggested prompt is below.
 
 ```
 What is the weather in New York?
@@ -210,7 +211,47 @@ What is the weather in New York?
 
 <br><br>
 
-9. When you're done, you can use 'exit' to stop the client and CTRL-C to stop the server.
+9. Now let's prove the discovery is doing real work. Stop the client with `exit`, then stop the server with `CTRL-C` in its terminal. Then open the server file so we can add a **fourth** tool - one that reports *tomorrow's* forecast, which the server does not offer today.
+
+```
+code mcp_server_v2.py
+```
+
+**Directions:** Copy the block of text in gray below and paste it into *mcp_server_v2.py* immediately ABOVE the line near the bottom that reads `if __name__ == "__main__":`. Then close the tab to save.
+
+```
+@mcp.tool
+def get_forecast(lat: float, lon: float) -> dict:
+    """Get tomorrow's forecast high and low temperature for coordinates."""
+    url = (
+        "https://api.open-meteo.com/v1/forecast"
+        f"?latitude={lat}&longitude={lon}"
+        "&daily=temperature_2m_max,temperature_2m_min"
+        "&forecast_days=2&timezone=auto"
+    )
+    daily = requests.get(url, timeout=10).json()["daily"]
+    return {"tomorrow_high_c": daily["temperature_2m_max"][1],
+            "tomorrow_low_c": daily["temperature_2m_min"][1]}
+```
+
+<br><br>
+
+10. Now restart the server and re-run the discovery script and the agent. **Note that you are not changing a single line of the agent's code.** In the first (server) terminal, run:
+
+```
+python mcp_server_v2.py
+```
+
+Then, in the second terminal, run the two commands below and prompt the agent about the weather in a city again.
+
+```
+python ../scripts/discover_tools.py
+python mcp_agent_v2.py
+```
+
+The discovery script now lists **four** tools, and as the agent starts it reports `Discovered 4 tool(s)` with *get_forecast* among them - the new tool flowed straight from the server into the agent's prompt. That is the payoff of MCP discovery: change the server, and every agent that connects picks up the change automatically. (You can let the loop finish, or just `CTRL-C` once you've seen the discovery line.) When you're done, use 'exit' to stop the client and `CTRL-C` to stop the server.
+
+![Agent discovering the new tool](./images/aip66.png?raw=true "Agent discovering the new tool")
     
 <p align="center">
 **[END OF LAB]**

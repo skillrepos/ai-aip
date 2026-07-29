@@ -145,13 +145,49 @@
         "note": "**Stores the tool result and appends the Observation to the message history** so the loop can keep reasoning."
       },
       {
-        "anchor": "geocode_location(name: str)",
+        "anchor": "The tools below were discovered from the MCP server at runtime.",
         "endAnchor": "Do NOT add extra text. Do NOT explain after your three lines.",
-        "title": "System prompt: tools + TAO format",
+        "title": "System prompt: built from discovery",
         "note": [
-          "**Lists the three MCP tools the agent may call and pins the strict 3-line Thought/Action/Args format.**",
-          "- Action: DONE signals the agent is finished",
-          "- Examples show the exact JSON args for each tool"
+          "**The tool list is a `{tool_catalogue}` placeholder, filled at runtime from the server.**",
+          "- Rules stop the model feeding a tool its own output",
+          "- Doubled `{{}}` braces survive `.format()` as literal JSON"
+        ]
+      },
+      {
+        "anchor": "# Every MCP tool arrives with a name, a description, and an inputSchema",
+        "title": "Placeholder values for examples",
+        "note": "**A JSON type -> sample value map, used to build a worked example for each discovered tool.**"
+      },
+      {
+        "anchor": "def _params(tool) -> dict:",
+        "lines": 43,
+        "title": "Turn discovered tools into prompt text",
+        "note": [
+          "**Reads each tool's `inputSchema` to build its signature, description, and example.**",
+          "- `build_system_prompt()` fills the template's placeholders",
+          "- Add a tool to the server and the agent learns it - no edit here"
+        ]
+      },
+      {
+        "anchor": "# ---- MCP DISCOVERY: ask the server what it offers (tools/list) ----",
+        "title": "MCP discovery: tools/list",
+        "note": [
+          "**`list_tools()` asks the server which tools exist - the same call `discover_tools.py` made.**",
+          "- The server is the single source of truth, not this file"
+        ]
+      },
+      {
+        "anchor": "messages = [",
+        "title": "Seed messages from discovery",
+        "note": "**The system message is `build_system_prompt(tools)` - built from what the server just advertised.**"
+      },
+      {
+        "anchor": "# Only tools the server actually advertised can be called",
+        "title": "Reject undiscovered tools",
+        "note": [
+          "**Only names the server advertised are callable; anything else is sent back for a retry.**",
+          "- Proves discovery drives the code, not just the prompt"
         ]
       }
     ],

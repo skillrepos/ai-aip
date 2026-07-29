@@ -5,6 +5,9 @@ Lab 2: TAO Agent with FastMCP Weather Server
 A TRUE agentic implementation where the LLM dynamically selects which
 tools to call and when to stop. This demonstrates:
 
+* **MCP Discovery**: the agent asks the server which tools exist
+  (`tools/list`) and BUILDS its prompt from the answer - nothing about the
+  tools is hardcoded in this file.
 * **LLM-Driven Control Flow**: Agent loop runs until LLM says "DONE"
 * **Dynamic Tool Selection**: LLM chooses which MCP tool to invoke each step
 * **TAO Protocol**: Full thought/action/observation trace with real agent behavior
@@ -26,48 +29,38 @@ from fastmcp.exceptions import ToolError
 from langchain_ollama import ChatOllama
 
 # ╔══════════════════════════════════════════════════════════════════╗
-# ║ 1.  Enhanced system prompt for dynamic tool selection            ║
+# ║ 1.  System prompt TEMPLATE                                       ║
 # ╚══════════════════════════════════════════════════════════════════╝
-SYSTEM = textwrap.dedent("""
-You are a weather information agent with access to these tools:
+# Note what is NOT here: the tool list. The {placeholders} below are filled
+# in at runtime from what the MCP server advertises, so this agent works
+# with whatever tools the server happens to expose.
+SYSTEM_TEMPLATE = textwrap.dedent("""
+You are a weather information agent.
 
-geocode_location(name: str)
-    Converts a city/location name to coordinates
-    Returns: {"latitude": float, "longitude": float, "name": str}
+The tools below were discovered from the MCP server at runtime.
+Use ONLY these tools:
 
-get_weather(lat: float, lon: float)
-    Gets current weather for coordinates
-    Returns: {"temperature": float, "code": int, "conditions": str}
-    Note: Temperature is in Celsius
-
-convert_c_to_f(c: float)
-    Converts Celsius to Fahrenheit
-    Returns: float
+{tool_catalogue}
 
 IMPORTANT: When you have enough information to answer the user's question,
 respond with:
 Thought: I have all the information needed
 Action: DONE
-Args: {}
+Args: {{}}
+
+Rules:
+- NEVER pass a tool's own output back into that same tool.
+- Call each tool only once unless a genuinely new value needs it.
+- As soon as the observations answer the question, respond with DONE.
 
 For each step where you need to call a tool, respond with EXACTLY three lines:
 
 Thought: <your reasoning about what to do next>
-Action: <exact tool name: geocode_location, get_weather, convert_c_to_f, or DONE>
+Action: <exact tool name: {tool_names}, or DONE>
 Args: <valid JSON arguments for the tool>
 
-Examples:
-Thought: I need to find the coordinates for Paris first
-Action: geocode_location
-Args: {"name": "Paris"}
-
-Thought: Now I'll get the weather at those coordinates
-Action: get_weather
-Args: {"lat": 48.8566, "lon": 2.3522}
-
-Thought: I need to convert 20.5 Celsius to Fahrenheit
-Action: convert_c_to_f
-Args: {"c": 20.5}
+Examples (these show the FORMAT - use real values for the actual request):
+{tool_examples}
 
 Do NOT add extra text. Do NOT explain after your three lines.
 """).strip()
@@ -77,7 +70,62 @@ ACTION_RE = re.compile(r"Action:\s*(\w+)", re.IGNORECASE)
 ARGS_RE = re.compile(r"Args:\s*(\{.*?\})(?:\s|$)", re.S | re.IGNORECASE)
 
 # ╔══════════════════════════════════════════════════════════════════╗
-# ║ 2.  Robust unwrap helper                                         ║
+# ║ 2.  Turn DISCOVERED MCP tools into prompt text                   ║
+# ╚══════════════════════════════════════════════════════════════════╝
+# Every MCP tool arrives with a name, a description, and an inputSchema
+# (JSON Schema describing its arguments). That is everything we need to
+# describe it to the LLM - which is why adding a tool to the server
+# automatically teaches this agent about it, with no code change here.
+_SAMPLE_VALUES = {"string": '"example"', "number": "0.0",
+                  "integer": "0", "boolean": "true"}
+
+
+def _params(tool) -> dict:
+    """Return the {name: schema} argument properties of an MCP tool."""
+    schema = getattr(tool, "inputSchema", None) or {}
+    return schema.get("properties", {}) or {}
+
+
+def _sample(prop: dict) -> str:
+    """A placeholder value of the right JSON type, for the examples."""
+    return _SAMPLE_VALUES.get(prop.get("type"), '"value"')
+
+
+def format_tool_catalogue(tools) -> str:
+    """Render discovered MCP tools as the tool list for the system prompt."""
+    blocks = []
+    for tool in tools:
+        params = _params(tool)
+        signature = ", ".join(f"{n}: {p.get('type', 'any')}" for n, p in params.items())
+        block = [f"{tool.name}({signature})"]
+        description = (tool.description or "").strip()
+        if description:
+            block.append(f"    {description.splitlines()[0]}")
+        blocks.append("\n".join(block))
+    return "\n\n".join(blocks)
+
+
+def format_tool_examples(tools) -> str:
+    """Build one worked Thought/Action/Args example per discovered tool."""
+    examples = []
+    for tool in tools:
+        args = ", ".join(f'"{n}": {_sample(p)}' for n, p in _params(tool).items())
+        examples.append(f"Thought: I need to use {tool.name}\n"
+                        f"Action: {tool.name}\n"
+                        f"Args: {{{args}}}")
+    return "\n\n".join(examples)
+
+
+def build_system_prompt(tools) -> str:
+    """Fill the template with the tools the MCP server just advertised."""
+    return SYSTEM_TEMPLATE.format(
+        tool_catalogue=format_tool_catalogue(tools),
+        tool_names=", ".join(t.name for t in tools),
+        tool_examples=format_tool_examples(tools),
+    )
+
+# ╔══════════════════════════════════════════════════════════════════╗
+# ║ 3.  Robust unwrap helper                                         ║
 # ╚══════════════════════════════════════════════════════════════════╝
 # FastMCP wraps tool results in various formats depending on version.
 # This helper extracts the actual Python value from any wrapper format.
@@ -103,7 +151,7 @@ def unwrap(obj):
     return obj
 
 # ╔══════════════════════════════════════════════════════════════════╗
-# ║ 3.  LLM-based city extractor (unchanged)                         ║
+# ║ 4.  LLM-based city extractor (unchanged)                         ║
 # ╚══════════════════════════════════════════════════════════════════╝
 # Uses a separate LLM call to extract city names from natural language.
 # This handles inputs like "What's the weather in Paris?" → "Paris"
@@ -120,7 +168,7 @@ def extract_city(prompt: str) -> Optional[str]:
     return None if reply.upper() == "NONE" else reply
 
 # ╔══════════════════════════════════════════════════════════════════╗
-# ║ 4.  Dynamic TAO loop with LLM-controlled tool selection          ║
+# ║ 5.  Dynamic TAO loop with LLM-controlled tool selection          ║
 # ╚══════════════════════════════════════════════════════════════════╝
 async def run_dynamic(city: str, max_steps: int = 10) -> None:
     """
@@ -133,8 +181,17 @@ async def run_dynamic(city: str, max_steps: int = 10) -> None:
     llm = ChatOllama(model="llama3.2", temperature=0.0)
 
     async with Client("http://127.0.0.1:8000/mcp/") as mcp:
+        # ---- MCP DISCOVERY: ask the server what it offers (tools/list) ----
+        # This is the same call scripts/discover_tools.py made. The agent's
+        # prompt is built from the RESULT, so the server is the single source
+        # of truth for what tools exist.
+        tools = await mcp.list_tools()
+        tool_names = {t.name for t in tools}
+        print(f"\n🔎 Discovered {len(tools)} tool(s) from the MCP server: "
+              f"{', '.join(sorted(tool_names))}")
+
         messages = [
-            {"role": "system", "content": SYSTEM},
+            {"role": "system", "content": build_system_prompt(tools)},
             {"role": "user", "content": f"What is the current weather in {city}?"},
         ]
 
@@ -186,6 +243,15 @@ async def run_dynamic(city: str, max_steps: int = 10) -> None:
                 print(f"  Conditions: {context['conditions'] or 'Unknown'}")
                 print(f"  Temperature: {temp_display}")
                 return
+
+            # Only tools the server actually advertised can be called
+            if action not in tool_names:
+                print(f"\n⚠️  '{action}' was not discovered from the server; asking the LLM to retry")
+                messages.append({"role": "assistant", "content": response})
+                messages.append({"role": "user", "content":
+                                 f"Observation: '{action}' is not an available tool. "
+                                 f"Valid tools: {', '.join(sorted(tool_names))}, or DONE."})
+                continue
 
             # Parse arguments
             args_match = ARGS_RE.search(response)
@@ -249,7 +315,7 @@ async def run_dynamic(city: str, max_steps: int = 10) -> None:
                 print(f"  {key}: {value}")
 
 # ╔══════════════════════════════════════════════════════════════════╗
-# ║ 5.  Interactive REPL                                             ║
+# ║ 6.  Interactive REPL                                             ║
 # ╚══════════════════════════════════════════════════════════════════╝
 if __name__ == "__main__":
     print("="*60)

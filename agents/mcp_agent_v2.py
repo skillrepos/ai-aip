@@ -19,8 +19,11 @@ from fastmcp import Client
 from fastmcp.exceptions import ToolError
 from langchain_ollama import ChatOllama
 
-SYSTEM = textwrap.dedent("""
-You are a weather information agent with access to these tools:
+# ╔══════════════════════════════════════════════════════════════════╗
+# ║ 1.  System prompt TEMPLATE                                       ║
+# ╚══════════════════════════════════════════════════════════════════╝
+SYSTEM_TEMPLATE = textwrap.dedent("""
+You are a weather information agent.
 
 """).strip()
 
@@ -29,7 +32,12 @@ ACTION_RE = re.compile(r"Action:\s*(\w+)", re.IGNORECASE)
 ARGS_RE = re.compile(r"Args:\s*(\{.*?\})(?:\s|$)", re.S | re.IGNORECASE)
 
 # ╔══════════════════════════════════════════════════════════════════╗
-# ║ 2.  Robust unwrap helper                                         ║
+# ║ 2.  Turn DISCOVERED MCP tools into prompt text                   ║
+# ╚══════════════════════════════════════════════════════════════════╝
+
+
+# ╔══════════════════════════════════════════════════════════════════╗
+# ║ 3.  Robust unwrap helper                                         ║
 # ╚══════════════════════════════════════════════════════════════════╝
 # FastMCP wraps tool results in various formats depending on version.
 # This helper extracts the actual Python value from any wrapper format.
@@ -55,7 +63,7 @@ def unwrap(obj):
     return obj
 
 # ╔══════════════════════════════════════════════════════════════════╗
-# ║ 3.  LLM-based city extractor (unchanged)                         ║
+# ║ 4.  LLM-based city extractor (unchanged)                         ║
 # ╚══════════════════════════════════════════════════════════════════╝
 # Uses a separate LLM call to extract city names from natural language.
 # This handles inputs like "What's the weather in Paris?" → "Paris"
@@ -72,20 +80,30 @@ def extract_city(prompt: str) -> Optional[str]:
     return None if reply.upper() == "NONE" else reply
 
 # ╔══════════════════════════════════════════════════════════════════╗
-# ║ 4.  Dynamic TAO loop with LLM-controlled tool selection          ║
+# ║ 5.  Dynamic TAO loop with LLM-controlled tool selection          ║
 # ╚══════════════════════════════════════════════════════════════════╝
     llm = ChatOllama(model="llama3.2", temperature=0.0)
 
     async with Client("http://127.0.0.1:8000/mcp/") as mcp:
-        messages = [
-            {"role": "system", "content": SYSTEM},
-            {"role": "user", "content": f"What is the current weather in {city}?"},
-        ]
 
+
+        print("\n" + "="*60)
+        print("Dynamic TAO Agent - LLM Controls Tool Selection")
+        print("="*60 + "\n")
+
+        # Store context for final answer
+        context = {
+            "city": city,
+            "latitude": None,
+            "longitude": None,
+            "temperature_c": None,
+            "temperature_f": None,
+            "conditions": None,
+        }
 
         for step in range(1, max_steps + 1):
             print(f"[Step {step}]")
-            
+
 
             action = action_match.group(1).lower()
 
@@ -108,6 +126,7 @@ def extract_city(prompt: str) -> Optional[str]:
                 print(f"  Conditions: {context['conditions'] or 'Unknown'}")
                 print(f"  Temperature: {temp_display}")
                 return
+
 
             # Parse arguments
             args_match = ARGS_RE.search(response)
@@ -148,7 +167,7 @@ def extract_city(prompt: str) -> Optional[str]:
                 context["temperature_c"] = result.get("temperature")
                 context["conditions"] = result.get("conditions")
             elif action == "convert_c_to_f":
-                context["temperature_f"] = float(result)           
+                context["temperature_f"] = float(result)
         # Max steps reached
         print(f"\n⚠️  Reached maximum steps ({max_steps}) without completion")
         print("Partial information gathered:")
@@ -157,7 +176,7 @@ def extract_city(prompt: str) -> Optional[str]:
                 print(f"  {key}: {value}")
 
 # ╔══════════════════════════════════════════════════════════════════╗
-# ║ 5.  Interactive REPL                                             ║
+# ║ 6.  Interactive REPL                                             ║
 # ╚══════════════════════════════════════════════════════════════════╝
 if __name__ == "__main__":
     print("="*60)
