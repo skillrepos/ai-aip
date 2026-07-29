@@ -105,8 +105,6 @@ def extract_city(prompt: str) -> Optional[str]:
             print(f"[Step {step}]")
 
 
-            action = action_match.group(1).lower()
-
             # Check if LLM says we're done
             if action == "done":
                 print("\n" + "="*60)

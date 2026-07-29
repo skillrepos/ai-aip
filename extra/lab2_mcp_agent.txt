@@ -42,16 +42,18 @@ Use ONLY these tools:
 
 {tool_catalogue}
 
-IMPORTANT: When you have enough information to answer the user's question,
-respond with:
-Thought: I have all the information needed
+IMPORTANT: When the observations already answer the user's question, stop calling
+tools and respond with:
+Thought: <why you are done>
 Action: DONE
 Args: {{}}
 
 Rules:
+- NEVER invent argument values (coordinates, IDs, codes). If you do not have a
+  value yet, first call the tool that produces it.
 - NEVER pass a tool's own output back into that same tool.
 - Call each tool only once unless a genuinely new value needs it.
-- As soon as the observations answer the question, respond with DONE.
+- As soon as the observations answer the question, reply with Action: DONE.
 
 For each step where you need to call a tool, respond with EXACTLY three lines:
 
@@ -216,13 +218,16 @@ async def run_dynamic(city: str, max_steps: int = 10) -> None:
             response = llm.invoke(messages).content.strip()
             print(response)
 
-            # Parse the action
+            # Parse the action. Small models sometimes signal completion as a bare
+            # "Thought: DONE" with no Action line, so treat that as DONE too.
             action_match = ACTION_RE.search(response)
-            if not action_match:
+            if action_match:
+                action = action_match.group(1).lower()
+            elif re.search(r"\bDONE\b", response, re.IGNORECASE):
+                action = "done"
+            else:
                 print("\n❌ Error: Could not parse Action from LLM response")
                 return
-
-            action = action_match.group(1).lower()
 
             # Check if LLM says we're done
             if action == "done":

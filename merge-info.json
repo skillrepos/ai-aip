@@ -125,7 +125,11 @@
         "anchor": "# Get LLM's decision",
         "endAnchor": "return",
         "title": "Get and parse the decision",
-        "note": "**Asks the LLM for its next Action and extracts it with a regex.** Bails out cleanly if no Action is found."
+        "note": [
+          "**Asks the LLM for its next Action and extracts it with a regex.**",
+          "- Small models sometimes reply `Thought: DONE` with no `Action:` line - that counts as DONE too",
+          "- Anything else unparseable ends the run cleanly"
+        ]
       },
       {
         "anchor": "# Dynamically call the tool the LLM selected",

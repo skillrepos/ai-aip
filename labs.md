@@ -1,7 +1,7 @@
 # Implementing AI Agents in Python
 ## Using frameworks, MCP, and RAG for agentic AI
 ## Session labs 
-## Revision 1.21 - 07/29/26
+## Revision 1.22 - 07/29/26
 
 **Follow the startup instructions in the README.md file IF NOT ALREADY DONE!**
 
@@ -205,7 +205,7 @@ python mcp_agent_v2.py
 
 <br><br>
 
-8. The agent should start up. Notice the `Discovered 3 tool(s) from the MCP server` line - the agent learned its tools from the server rather than having them hardcoded. It then waits for you to prompt it about weather in a location. You'll be able to see similar TAO output. And you'll also be able to see the server INFO messages in the other terminal as the MCP connections and events happen. A suggested prompt is below.
+8. The agent will start up and wait for you to prompt it about weather in a location. A suggested prompt is below. As soon as you enter it, the agent picks the city out of your question and then opens its MCP connection - printing the `Discovered 3 tool(s) from the MCP server` line - the agent learned its tools from the server rather than having them hardcoded. After that you'll be able to see similar TAO output. (The LLM decides which of the discovered tools it actually needs, so your run may skip one - for example supplying coordinates itself instead of calling *geocode_location*, or reporting °C instead of calling *convert_c_to_f*. That's the agent choosing, not an error.) And you'll also be able to see the server INFO messages in the other terminal as the MCP connections and events happen.
 
 ```
 What is the weather in New York?
@@ -253,7 +253,7 @@ python ../scripts/discover_tools.py
 python mcp_agent_v2.py
 ```
 
-The discovery script now lists **four** tools, and as the agent starts it reports `Discovered 4 tool(s)` with *get_forecast* among them - the new tool flowed straight from the server into the agent's prompt. That is the payoff of MCP discovery: change the server, and every agent that connects picks up the change automatically. (You can let the loop finish, or just `CTRL-C` once you've seen the discovery line.) When you're done, use 'exit' to stop the client and `CTRL-C` to stop the server.
+The discovery script now lists **four** tools, and when you prompt the agent it reports `Discovered 4 tool(s)` with *get_forecast* among them - the new tool flowed straight from the server into the agent's prompt. That is the payoff of MCP discovery: change the server, and every agent that connects picks up the change automatically. (You can let the loop finish, or just `CTRL-C` once you've seen the discovery line.) When you're done, use 'exit' to stop the client and `CTRL-C` to stop the server.
 
 ![Agent discovering the new tool](./images/aip66.png?raw=true "Agent discovering the new tool")
     
