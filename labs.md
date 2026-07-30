@@ -1,7 +1,7 @@
 # Implementing AI Agents in Python
 ## Using frameworks, MCP, and RAG for agentic AI
 ## Session labs 
-## Revision 1.23 - 07/29/26
+## Revision 1.31 - 07/30/26
 
 **Follow the startup instructions in the README.md file IF NOT ALREADY DONE!**
 
@@ -205,7 +205,7 @@ python mcp_agent_v2.py
 
 <br><br>
 
-8. The agent will start up and wait for you to prompt it about weather in a location. A suggested prompt is below. As soon as you enter it, the agent picks the city out of your question and then opens its MCP connection - printing the `Discovered 3 tool(s) from the MCP server` line - the agent learned its tools from the server rather than having them hardcoded. After that you'll be able to see similar TAO output. (The LLM decides which of the discovered tools it actually needs, so your run may use a different set than the screenshot - that's the agent choosing, not an error. The **Final Answer** lists each tool the agent called and what it returned.) And you'll also be able to see the server INFO messages in the other terminal as the MCP connections and events happen.
+8. The agent will start up and wait for you to prompt it about weather in a location. A suggested prompt is below. As soon as you enter it, the agent picks the city out of your question and then opens its MCP connection - printing the `Discovered 3 tool(s) from the MCP server` line - the agent learned its tools from the server rather than having them hardcoded. After that you'll be able to see similar TAO output. (The LLM decides which of the discovered tools it actually needs, so your run may use a different set than the screenshot - that's the agent choosing, not an error. The **Final Answer** is a plain-English sentence the model writes from the tool results, with the tools it used listed underneath.) And you'll also be able to see the server INFO messages in the other terminal as the MCP connections and events happen.
 
 ```
 What is the weather in New York?
@@ -221,21 +221,31 @@ What is the weather in New York?
 code mcp_server_v2.py
 ```
 
-**Directions:** Copy the block of text in gray below and paste it into *mcp_server_v2.py* immediately ABOVE the line near the bottom that reads `if __name__ == "__main__":`. Then close the tab to save.
+**Directions:** Copy the block of text in gray below and paste it into *mcp_server_v2.py* immediately ABOVE the line near the bottom that reads `if __name__ == "__main__":`. Then close the tab to save. (Note that it reuses things the server already defines - the `WEATHER_CODES` table, so tomorrow's conditions come back as words like *Slight rain showers* rather than a raw WMO number, and the same `MAX_RETRIES` / `BACKOFF_FACTOR` retry policy the other tools use.)
 
 ```
 @mcp.tool
 def get_forecast(lat: float, lon: float) -> dict:
-    """Get tomorrow's forecast high and low temperature for coordinates."""
+    """Get tomorrow's forecast high, low, and conditions for coordinates."""
     url = (
         "https://api.open-meteo.com/v1/forecast"
         f"?latitude={lat}&longitude={lon}"
-        "&daily=temperature_2m_max,temperature_2m_min"
+        "&daily=temperature_2m_max,temperature_2m_min,weather_code"
         "&forecast_days=2&timezone=auto"
     )
-    daily = requests.get(url, timeout=10).json()["daily"]
+    # Same retry policy the other tools use - this endpoint can be slow
+    for attempt in range(MAX_RETRIES):
+        try:
+            daily = requests.get(url, timeout=20).json()["daily"]
+            break
+        except requests.RequestException as e:
+            if attempt == MAX_RETRIES - 1:
+                return {"error": f"Forecast service failed after {MAX_RETRIES} attempts: {e}"}
+            time.sleep(BACKOFF_FACTOR ** attempt)
+
     return {"tomorrow_high_c": daily["temperature_2m_max"][1],
-            "tomorrow_low_c": daily["temperature_2m_min"][1]}
+            "tomorrow_low_c": daily["temperature_2m_min"][1],
+            "tomorrow_conditions": WEATHER_CODES.get(daily["weather_code"][1], "Unknown")}
 ```
 
 ![Adding new tool](./images/aip69.png?raw=true "Adding new tool")
@@ -261,11 +271,11 @@ The discovery script now lists **four** tools, and when you prompt the agent it 
 What is tomorrow's forecast for New York?
 ```
 
-Watch the TAO trace: the agent works out the coordinates, then calls `get_forecast` - a tool that did not exist the last time you ran this agent - and the **Final Answer** lists `get_forecast` along with the high and low it returned. That is the payoff of MCP discovery: **you added a tool to the server and the agent found it, understood its arguments, and used it - without a single change to the agent's code.** When you're done, use 'exit' to stop the client and `CTRL-C` to stop the server.
+Watch the TAO trace: the agent works out the coordinates, then calls `get_forecast` - a tool that did not exist the last time you ran this agent - and the **Final Answer** reports tomorrow's high and low in plain English, with `get_forecast` listed among the tools it used. That is the payoff of MCP discovery: **you added a tool to the server and the agent found it, understood its arguments, and used it - without a single change to the agent's code.** When you're done, use 'exit' to stop the client and `CTRL-C` to stop the server.
 
-![Agent using the newly discovered tool](./images/aip71.png?raw=true "Agent using the newly discovered tool")
+![Agent discovering and calling the new tool](./images/aip71.png?raw=true "Agent discovering and calling the new tool")
 
-![Final answer including the new tool](./images/aip70.png?raw=true "Final answer including the new tool")
+![The answer built from the new tool's results](./images/aip70.png?raw=true "The answer built from the new tool's results")
     
 <p align="center">
 **[END OF LAB]**
@@ -481,10 +491,19 @@ Follow the tagged debug lines to see the agent thinking:
 5. **Decomposition + grounding.** Ask:
 
 ```
-Which is closer to me, HQ or the Eastern office?
+How far am I from HQ and from the Denver office?
 ```
 
-There is no "Eastern office" in the data. Watch the agent call `distance_to` for HQ (the `[GROUND]` line resolves it to New York) and for "Eastern office" (the `[GROUND]` line reports **NOT FOUND**), then answer correctly that HQ is in New York and the Eastern office doesn't exist - listing the offices that do. It decomposed the question and refused to invent an office.
+There is no "Denver office" in the data. Watch the agent split the question in two and search the documents for each office separately: "HQ" comes back with a real address, "Denver office" comes back with three unrelated offices and nothing that matches. So it calls `distance_to` **only** for HQ - and even there, the `[GROUND]` line resolves "New York, NY" to `HQ 123 Main St` before any mileage is computed. You get the real distance for the office that exists, plus a plain statement that the other one is not in the documents. It never invents a Denver mileage, and it never calls a distance tool for an office it has no address for.
+
+Try an "Eastern office" too. That one is more interesting, because there *is* a Northeast office in the data - and a model's instinct is to be helpful and answer about that one instead, quietly swapping the office you asked about for a similar-sounding one it does have. Watch the `[observation]` line when you try it: the Northeast Office comes back among the retrieved snippets, so the substitution is handed to the model on a plate - and it still reports that the Eastern office is not listed. The line in the system prompt that stops it is explicit about that:
+
+```
+Never substitute a similarly named office for the one the user asked about - if the exact
+office the user named is not in the documents, say that, even if a close name exists.
+```
+
+Grounding is not just "don't invent facts" - it is also "don't silently answer a different question than the one asked." A retrieval tool that comes back empty-handed can only help if the prompt tells the model to respect it.
 
 ![Running agent](./images/aip62.png?raw=true "Running agent") 
 
@@ -496,14 +515,16 @@ There is no "Eastern office" in the data. Watch the agent call `distance_to` for
 Which is closer to me, HQ or the Midwest office?
 ```
 
-Watch it call `distance_to` for BOTH offices, then compare the distances in its final answer. What you may see is that it gets the answer wrong - it retrieves the *right* numbers but picks the *wrong* office. The catch: we're making the **model** eyeball which number is smaller, and small models do that kind of arithmetic unreliably. Hold onto that clue - it points straight at the fix in the next step.
+Watch it call `distance_to` for BOTH offices, then compare the distances in its final answer. It will almost certainly get this right - HQ, at 423.36 miles versus the Midwest office's 640.73.
+
+Now look at *how* it got there. The two `[observation]` lines are hard data from our code. The comparison is not: the model read two numbers and told you in prose which was smaller - rounding them to "approximately 423" and "about 641" on the way out. Nothing in that final sentence is checkable without redoing the arithmetic yourself, nothing guarantees the next query goes the same way, and the answer arrives as English rather than as data your program can use. Older and smaller models used to visibly flub exactly this comparison; current ones usually don't - which makes the problem harder to see, not smaller. Hold onto that - it points straight at the fix in the next step.
 
 ![Running agent](./images/aip52.png?raw=true "Running agent") 
 
 
 <br><br>
 
-7. **The real fix isn't a bigger model - it's a better tool.** The model flubs the answer because we're asking it to *eyeball* which distance is smaller - arithmetic the model does unreliably. Instead, hand it a tool that does the comparison in code. Stop the agent with `exit`, then enable the comparison tool:
+7. **The real fix isn't a bigger model - it's a better tool.** A bigger model makes the comparison *more likely* to be right; it never makes it *checkable*. So don't ask the model to do the comparison at all - hand it a tool that does the ranking in code and returns it as data. Stop the agent with `exit`, then enable the comparison tool:
 
 ```
 export USE_COMPARE_TOOL=1
@@ -511,7 +532,9 @@ export USE_COMPARE_TOOL=1
 
 <br><br>
 
-8. Start the agent again and run the **same query from step 6**, still on the qwen3.6-27b model. Confirm the top line now shows `compare_tool=on`. This time the agent calls `compare_distances` - watch for the `[COMPARE]` line listing both offices ranked by miles - and answers correctly, because the "smaller = closer" deduction now happens deterministically in code instead of in the model's head.
+8. Start the agent again and run the **same query from step 6**, still on the qwen3.6-27b model. Confirm the top line now shows `compare_tool=on`. This time the agent calls `compare_distances` - watch for the `[COMPARE]` line listing both offices ranked by miles.
+
+The final answer reads much the same as before. What changed is everything behind it: the ranking was computed by `sorted()` in Python, so it is identical on every run and on every model; it arrives as structured data (`{"closest": ..., "ranked": [...]}`) that your code can act on rather than prose it would have to parse; and the `[COMPARE]` line is an audit trail you can point at when someone asks why the agent said what it said. That is the difference between an answer that happens to be right and one you can rely on being right - and it came from moving one deduction out of the model and into code, not from a better model.
 
 ```
 Which is closer to me, HQ or the Midwest office?
@@ -889,9 +912,13 @@ python -m pytest test_agent_reasoning.py::test_real_agent_tool_selection -v -s
 
 This will do the following: (running time: ~2-3 min):
 - Give agent: "What's 25 times 4 and what's the weather in Tokyo?"
-- Test that agent correctly identifies TWO tasks
-- Test that agent calls BOTH tools (calculator AND weather)
+- Test that agent correctly identifies the tasks in the query
+- Test which tools the agent chooses to call (calculator and/or weather)
 - Verify agent reasoning chain
+
+**NOTE:** This test runs against the **local** model - it ignores the `AGENT_PROVIDER=groq` you exported in Lab 3. That is deliberate: on Groq this compound query fails roughly two runs in three, not because the agent is wrong but because Groq validates tool-call formatting on its side and rejects the reply whenever the model answers in text at some step. A red test here would look like your code broke, when nothing did.
+
+The local model is slower and will usually solve **one** half of the query (most often the math) rather than both - which is why the test asserts "at least one part". You'll see either `Agent handled math task` or `Agent handled weather task` rather than `EXCELLENT: Agent handled BOTH tasks`. Both outcomes pass. That gap between "a model can call one tool" and "a model reliably decomposes a two-part request" is itself worth noticing - it is the practical difference between a small local model and a large hosted one.
 
 ![Passing test](./images/aip28.png?raw=true "Passing test")
 
@@ -959,13 +986,7 @@ Look at `test_real_agent_tool_selection()` - it checks:
 - Building agents that resist goal hijacking
 - The difference between vulnerable and hardened agents
 
-**NOTE:** It's possible that at this point, you might get an error from Groq about `Rate limit reached for model qwen/qwen3.6-27b`. If you do, you can exit the running agent with `exit`. Then fall back to the local model for this lab (the security defenses are deterministic and work on any model) by running the command below in the terminal.
-
-```
-unset AGENT_PROVIDER
-```
-
-After this, restart the agent and try the prompt again.
+**NOTE:** This lab runs on the **local** model on purpose - the two agents here ignore the `AGENT_PROVIDER=groq` you exported back in Lab 3. Every defense you add in this lab is a deterministic check in Python, so it behaves identically on any model, and running local avoids two unrelated Groq problems: its server-side tool-call validation occasionally rejects a reply that arrives as text, and the free tier has a tight per-minute token limit. You'll see `[MODEL] provider=ollama` when each agent starts. Responses take a few seconds longer than the Groq-backed labs - that's expected.
 
 ---
 

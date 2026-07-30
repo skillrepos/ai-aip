@@ -184,6 +184,8 @@ SYSTEM = (
     "offices or call distance_to/city_facts for offices the user did not mention. "
     "For 'tell me about <office>', search that office and describe it (its city and snippet); "
     "compute distance only if asked. " + CLOSER_RULE +
+    "Never substitute a similarly named office for the one the user asked about - if the exact "
+    "office the user named is not in the documents, say that, even if a close name exists. "
     'If a tool returns {"error": ..., "available_offices": [...]}, say that office does not exist '
     "and list the ones that do - never invent one. Keep answers concise; finish with plain text.")
 # >>>>> END MERGE SECTION 2 >>>>>

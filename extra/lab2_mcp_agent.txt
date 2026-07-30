@@ -237,14 +237,26 @@ async def run_dynamic(city: str, question: str, max_steps: int = 10) -> None:
                 print("Agent has gathered sufficient information!")
                 print("="*60)
 
-                # Report what the agent actually collected. Nothing here names a
-                # specific tool, so this works for whatever the server advertises -
-                # including a tool added long after this code was written.
-                print(f"\nFinal Answer for: {question}")
-                for name, value in gathered:
-                    print(f"  {name} -> {json.dumps(value) if isinstance(value, dict) else value}")
                 if not gathered:
-                    print("  (no tools were called)")
+                    print("\nFinal Answer:\n  No tools were called, so there is nothing to report.")
+                    return
+
+                # Turn the collected results into one plain-English sentence. The
+                # summariser sees ONLY the question and what the tools returned, so
+                # this works for whatever tools the server happens to advertise.
+                results = "\n".join(
+                    f"{name} -> {json.dumps(value) if isinstance(value, dict) else value}"
+                    for name, value in gathered)
+                answer = llm.invoke(
+                    f"Question: {question}\n\nTool results:\n{results}\n\n"
+                    "Write ONE sentence answering the question. Use ONLY the numbers "
+                    "and words shown above, copied exactly - never calculate or convert "
+                    "anything yourself. A field name ending in _c is degrees Celsius; a "
+                    "convert_c_to_f result is degrees Fahrenheit.").content.strip()
+
+                print("\nFinal Answer:")
+                print(f"  {answer}")
+                print(f"\n  (tools used: {', '.join(dict.fromkeys(n for n, _ in gathered))})")
                 return
 
             # Only tools the server actually advertised can be called

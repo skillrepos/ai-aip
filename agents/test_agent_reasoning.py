@@ -10,10 +10,16 @@ from unittest.mock import Mock, patch, MagicMock
 from smolagents import ToolCallingAgent, LiteLLMModel, tool
 
 
-# --- Model provider for the REAL-agent tests (Groq if AGENT_PROVIDER=groq and
-#     GROQ_API_KEY are exported, else local Ollama). Same toggle as Labs 3, 4, 8. ---
+# --- Model provider for the REAL-agent tests: the LOCAL Ollama model, on purpose. ---
+# These tests deliberately ignore the AGENT_PROVIDER=groq you exported in Lab 3. On Groq
+# this compound query fails roughly two runs in three - not because the agent is wrong,
+# but because Groq validates tool-call formatting server-side and rejects the reply when
+# the model answers in text at some step. A red test would look like your code broke.
+# The local model is slower and usually solves one half of the query rather than both,
+# which the assertion below allows on purpose.
+# (Instructors: export LAB7_PROVIDER=groq to demo the both-tools run on Groq.)
 def build_test_model():
-    provider = os.environ.get("AGENT_PROVIDER", "").strip().lower()
+    provider = os.environ.get("LAB7_PROVIDER", "").strip().lower()
     groq_key = os.environ.get("GROQ_API_KEY", "").strip()
     if provider == "groq" and groq_key:
         name = os.environ.get("AGENT_MODEL", "qwen/qwen3.6-27b").strip()
@@ -21,9 +27,36 @@ def build_test_model():
             name = "groq/" + name
         print(f"[MODEL] provider=groq  model={name}")
         return LiteLLMModel(model_id=name, api_key=groq_key, temperature=0.0)
-    model = "ollama/" + os.getenv("OLLAMA_MODEL", "llama3.2:latest")
+    model = "ollama/" + os.getenv("OLLAMA_MODEL", "llama3.2")
     print(f"[MODEL] provider=ollama  model={model}")
     return LiteLLMModel(model_id=model, api_base="http://localhost:11434")
+
+
+# Groq validates tool-call formatting on its own side. Small and reasoning-tuned
+# models occasionally emit the final answer as plain text instead of as a tool call,
+# which comes back as a "tool_use_failed" error even though nothing is wrong with the
+# agent. Retrying clears it - without this, these live tests flake for no real reason.
+def run_with_retry(agent, prompt, attempts=3):
+    """Run the agent, retrying with more variety if a tool call comes back malformed."""
+    original = dict(getattr(agent.model, "kwargs", {}) or {})
+    try:
+        for attempt in range(attempts):
+            try:
+                return agent.run(prompt)
+            except Exception as e:
+                if "tool_use_failed" not in str(e) or attempt == attempts - 1:
+                    raise
+                # temperature=0 makes the bad reply deterministic, so retrying the
+                # identical request fails identically. Add variety to shake it loose.
+                temp = 0.4 * (attempt + 1)
+                if isinstance(getattr(agent.model, "kwargs", None), dict):
+                    agent.model.kwargs["temperature"] = temp
+                print(f"[INFO] Model returned a malformed tool call; retrying at "
+                      f"temperature {temp:.1f} ({attempt + 2}/{attempts})")
+    finally:
+        if isinstance(getattr(agent.model, "kwargs", None), dict):
+            agent.model.kwargs.clear()
+            agent.model.kwargs.update(original)
 
 
 # ========== TOOLS FOR TESTING ==========
@@ -364,7 +397,7 @@ def test_real_agent_tool_selection():
     print("\nAgent is reasoning and calling REAL APIs...\n")
 
     try:
-        response = agent.run(query)
+        response = run_with_retry(agent, query)
 
         print(f"\nAgent response: {response}\n")
 
@@ -448,7 +481,7 @@ def test_real_agent_currency_conversion():
     print("\nAgent is calling REAL currency API...\n")
 
     try:
-        response = agent.run(query)
+        response = run_with_retry(agent, query)
 
         print(f"\nAgent response: {response}\n")
 
@@ -507,7 +540,7 @@ def test_real_agent_error_recovery():
     print("\nAgent is processing...\n")
 
     try:
-        response = agent.run(query)
+        response = run_with_retry(agent, query)
 
         print(f"Agent response: {response}\n")
 

@@ -13,10 +13,15 @@ warnings.filterwarnings("ignore", message="Pydantic serializer warnings")
 
 OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "llama3.2:1b")
 
-# --- Model provider: Groq if AGENT_PROVIDER=groq and GROQ_API_KEY are exported, else local
-#     Ollama. Same toggle as Labs 3, 4, 7 - the ONLY change to this file. ---
+# --- Model provider: this lab PINS the local Ollama model on purpose. ---
+# Unlike Labs 3, 4, and 7, this lab ignores the AGENT_PROVIDER=groq you exported earlier.
+# The security defenses below are deterministic string checks, so they behave identically
+# on any model - while Groq validates tool-call formatting on its side and rejects the
+# occasional reply that arrives as text, which fails the lab for reasons that have nothing
+# to do with security. Running local keeps the lab about security. (If you specifically
+# want to run this lab on Groq anyway, export LAB8_PROVIDER=groq.)
 def build_model():
-    provider = os.environ.get("AGENT_PROVIDER", "").strip().lower()
+    provider = os.environ.get("LAB8_PROVIDER", "").strip().lower()
     groq_key = os.environ.get("GROQ_API_KEY", "").strip()
     if provider == "groq" and groq_key:
         name = os.environ.get("AGENT_MODEL", "qwen/qwen3.6-27b").strip()
@@ -138,6 +143,33 @@ def send_company_email(recipient: str, subject: str, body: str) -> str:
 SYSTEM_PROMPT = "You are OmniTech's HR Benefits Assistant. Help employees with questions about their benefits, PTO, and HR policies."
 
 
+# Groq validates tool-call formatting on its own side. Small and reasoning-tuned
+# models occasionally emit the final answer as plain text instead of as a tool call,
+# which comes back as a "tool_use_failed" error even though nothing is wrong with the
+# agent. Retrying the same request clears it, so don't let it end the conversation.
+def run_with_retry(agent, prompt, attempts=3):
+    """Run the agent, retrying with more variety if a tool call comes back malformed."""
+    original = dict(getattr(agent.model, "kwargs", {}) or {})
+    try:
+        for attempt in range(attempts):
+            try:
+                return agent.run(prompt)
+            except Exception as e:
+                if "tool_use_failed" not in str(e) or attempt == attempts - 1:
+                    raise
+                # temperature=0 makes the bad reply deterministic, so retrying the
+                # identical request fails identically. Add variety to shake it loose.
+                temp = 0.4 * (attempt + 1)
+                if isinstance(getattr(agent.model, "kwargs", None), dict):
+                    agent.model.kwargs["temperature"] = temp
+                print(f"[INFO] Model returned a malformed tool call; retrying at "
+                      f"temperature {temp:.1f} ({attempt + 2}/{attempts})")
+    finally:
+        if isinstance(getattr(agent.model, "kwargs", None), dict):
+            agent.model.kwargs.clear()
+            agent.model.kwargs.update(original)
+
+
 def main():
     print("\nOmniTech HR Benefits Assistant")
     print("Type 'quit' to exit.\n")
@@ -175,7 +207,7 @@ def main():
             continue
 
         try:
-            response = agent.run(user_input)
+            response = run_with_retry(agent, user_input)
             print(f"Assistant: {response}\n")
         except Exception as e:
             # Check if tools were executed despite the error
