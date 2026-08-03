@@ -1,7 +1,7 @@
 # Implementing AI Agents in Python
 ## Using frameworks, MCP, and RAG for agentic AI
 ## Session labs 
-## Revision 1.33 - 08/03/26
+## Revision 1.34 - 08/03/26
 
 **Follow the startup instructions in the README.md file IF NOT ALREADY DONE!**
 
@@ -1007,7 +1007,7 @@ When prompted, type:
 What is the PTO balance for employee E1001?
 ```
 
-The agent should respond with Alice Johnson's PTO balance (15 days). This is normal, expected operation.
+We are using a local model again, so this may take a few minutes to run. Eventually, the agent should respond with Alice Johnson's PTO balance (15 days). This is normal, expected operation.
 
 ![normal function](./images/aip35.png?raw=true "normal function")
 
