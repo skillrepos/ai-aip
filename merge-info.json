@@ -25,7 +25,7 @@
       {
         "anchor": "\"\"\"Execute the TAO loop, letting the AI decide which tools to call.\"\"\"",
         "title": "Seed the conversation",
-        "note": "**Starts the message list with the system prompt and the user's question** \u2014 the input to the Thought\u2192Action\u2192Observation loop."
+        "note": "**Starts the message list with the system prompt and the user's question** — the input to the Thought→Action→Observation loop."
       },
       {
         "anchor": "# Get AI's next step",
@@ -57,7 +57,7 @@
       {
         "anchor": "You are a weather agent with one tool:",
         "title": "System prompt: the agent's role",
-        "note": "**Opens the ReAct system prompt \u2014 tells the model it is a weather agent with one tool.** The persona that frames every turn."
+        "note": "**Opens the ReAct system prompt — tells the model it is a weather agent with one tool.** The persona that frames every turn."
       },
       {
         "anchor": "get_weather(lat:float, lon:float)",
@@ -66,7 +66,7 @@
         "note": [
           "**Defines the tool and the exact Thought/Action/Args format the model must emit**, with worked examples.",
           "- CRITICAL RULES: never hallucinate results; stop after Action and wait for the Observation",
-          "- After \"Final:\" it switches to plain text \u2014 no more Thought/Action"
+          "- After \"Final:\" it switches to plain text — no more Thought/Action"
         ]
       }
     ],
@@ -86,18 +86,18 @@
       {
         "anchor": "# Extract and return weather data",
         "title": "Return the weather dict",
-        "note": "**Parses the API response into temperature, code, and a friendly conditions string** \u2014 the tool's result."
+        "note": "**Parses the API response into temperature, code, and a friendly conditions string** — the tool's result."
       },
       {
         "anchor": "def convert_c_to_f(c: float) -> float:",
-        "title": "Celsius\u2192Fahrenheit tool",
-        "note": "**A second MCP tool.** The client agent chains get_weather \u2192 convert_c_to_f."
+        "title": "Celsius→Fahrenheit tool",
+        "note": "**A second MCP tool.** The client agent chains get_weather → convert_c_to_f."
       },
       {
         "anchor": "url = \"https://geocoding-api.open-meteo.com/v1/search\"",
         "endAnchor": "last_error = None",
         "title": "Geocoding tool endpoint",
-        "note": "**Sets up the location-name \u2192 lat/lon lookup** used by the geocode tool."
+        "note": "**Sets up the location-name → lat/lon lookup** used by the geocode tool."
       },
       {
         "anchor": "mcp.run(",
@@ -137,7 +137,7 @@
       {
         "anchor": "# Dynamically call the tool the LLM selected",
         "title": "Announce the tool call",
-        "note": "**Logs which MCP tool the model chose and its arguments** \u2014 the visible trace of the agent's decision."
+        "note": "**Logs which MCP tool the model chose and its arguments** — the visible trace of the agent's decision."
       },
       {
         "anchor": "result = unwrap(await mcp.call_tool(action, args))",
@@ -222,8 +222,8 @@
         "endAnchor": "raise RuntimeError(f\"Calculation error: {e}\")",
         "title": "Calculator tool",
         "note": [
-          "**A second @tool that safely evaluates arithmetic** (amount \u00d7 rate).",
-          "- Kept separate so the agent chains rate \u2192 math"
+          "**A second @tool that safely evaluates arithmetic** (amount × rate).",
+          "- Kept separate so the agent chains rate → math"
         ]
       },
       {
@@ -255,25 +255,20 @@
     ],
     "extra/agentic_rag_agent.txt": [
       {
-        "anchor": "# Lab \"fix\" toggle: when USE_COMPARE_TOOL=1, expose a deterministic compare_distances",
-        "title": "Compare-tool toggle",
-        "note": "**Reads USE_COMPARE_TOOL.** Off by default so you first watch the model try 'which is closer' itself \u2014 then flip it on for the fix."
-      },
-      {
         "anchor": "# search_documents -> RAG retrieval (the model may call it again with a better query)",
         "endAnchor": "DISPATCH = {\"search_documents\": search_documents, \"distance_to\": distance_to, \"city_facts\": city_facts}",
         "title": "The agent's tools",
         "note": [
-          "**All the tools the model can call: RAG search, office\u2192city grounding, distance, compare, and city facts.**",
+          "**All the tools the model can call: RAG search, office→city grounding, distance, and city facts.**",
           "- ground_office refuses to invent offices not in the docs",
-          "- compare_distances ranks in code \u2014 the deterministic fix"
+          "- distance_to grounds the office name first, then geocodes the real city"
         ]
       },
       {
         "anchor": "# TOOLS_SCHEMA is the standard OpenAI-style tool schema. We pass it straight to the",
         "endAnchor": "\"and list the ones that do - never invent one. Keep answers concise; finish with plain text.\")",
         "title": "Tool schemas + system prompt",
-        "note": "**The JSON schemas that enable native tool-calling, plus the system rules** (search first, never invent an office). compare_distances is added only when the toggle is on."
+        "note": "**The JSON schemas that enable native tool-calling, plus the system rules** (search first, answer only what was asked, never invent or substitute an office)."
       },
       {
         "anchor": "if not (answer or \"\").strip():",
@@ -285,7 +280,7 @@
         "anchor": "state = {\"start\": start, \"retrieved\": []}",
         "endAnchor": "print(\"[AGENT] reached max steps without a final answer.\")",
         "title": "The model-driven loop",
-        "note": "**The core loop: the model either calls tools (run them, feed results back) or gives a final answer that gets self-checked.** The model \u2014 not the code \u2014 drives each step."
+        "note": "**The core loop: the model either calls tools (run them, feed results back) or gives a final answer that gets self-checked.** The model — not the code — drives each step."
       }
     ],
     "extra/lab5-code.txt": [
@@ -312,7 +307,7 @@
       {
         "anchor": "book_flight_task = Task(",
         "title": "Task: book the flight",
-        "note": "**Books the chosen flight** \u2014 note `function=` runs real Python here, not just the LLM."
+        "note": "**Books the chosen flight** — note `function=` runs real Python here, not just the LLM."
       },
       {
         "anchor": "crew = Crew(",
@@ -355,14 +350,14 @@
         "anchor": "if critique.strip().lower().startswith(\"fail\"):",
         "endAnchor": "print(\"\\nOriginal code passed review.\\n\")",
         "title": "Fix on FAIL",
-        "note": "**If the critique failed, the fixer revises the code and it's re-run.** generate \u2192 evaluate \u2192 revise \u2192 re-simulate: the reflection loop."
+        "note": "**If the critique failed, the fixer revises the code and it's re-run.** generate → evaluate → revise → re-simulate: the reflection loop."
       }
     ],
     "extra/secure_agent.txt": [
       {
         "anchor": "event = {",
         "title": "Layer 1: security logging",
-        "note": "**Writes a timestamped JSON audit line for every security event** \u2014 the forensic trail."
+        "note": "**Writes a timestamped JSON audit line for every security event** — the forensic trail."
       },
       {
         "anchor": "user_lower = user_input.lower()",
@@ -370,7 +365,7 @@
         "title": "Layer 3: input validation",
         "note": [
           "**Blocks common prompt-injection phrasings and mentions of dangerous tools BEFORE the LLM sees them.**",
-          "- First line of defense \u2014 fast, free, no LLM call",
+          "- First line of defense — fast, free, no LLM call",
           "- You'll trip these exact patterns with the attack prompts"
         ]
       },
@@ -378,7 +373,7 @@
         "anchor": "SYSTEM_PROMPT = \"\"\"You are OmniTech's HR Benefits Assistant. You help employees check their benefits and PTO balances.",
         "endAnchor": "\"\"\"",
         "title": "Layer 4: hardened prompt",
-        "note": "**A system prompt with explicit security rules that user messages can't override.** Defense in depth \u2014 never relied on alone."
+        "note": "**A system prompt with explicit security rules that user messages can't override.** Defense in depth — never relied on alone."
       },
       {
         "anchor": "response_lower = str(response).lower()",
@@ -395,7 +390,7 @@
         "anchor": "# Post-validation: check output before showing to user",
         "endAnchor": "log_security_event(\"REQUEST_OK\", f\"Handled query successfully\")",
         "title": "Wire in output checks",
-        "note": "**Validates the response and logs the outcome** \u2014 completing the pre- and post-LLM defense sandwich."
+        "note": "**Validates the response and logs the outcome** — completing the pre- and post-LLM defense sandwich."
       }
     ]
   }

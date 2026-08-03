@@ -42,11 +42,7 @@ if USE_GROQ:
 else:
     client = OpenAI(base_url="http://localhost:11434/v1", api_key="ollama")
     MODEL = os.environ.get("AGENT_MODEL", "llama3.2").strip()
-# Lab "fix" toggle: when USE_COMPARE_TOOL=1, expose a deterministic compare_distances
-# tool so the model no longer has to deduce "smaller distance = closer" itself. Off by
-# default, so the model first attempts the comparison on its own (and a small one may flub it).
-USE_COMPARE_TOOL = os.environ.get("USE_COMPARE_TOOL", "").strip().lower() in ("1", "true", "yes")
-print(f"[AGENT] provider={'groq' if USE_GROQ else 'ollama'}  model={MODEL}  compare_tool={'on' if USE_COMPARE_TOOL else 'off'}")
+print(f"[AGENT] provider={'groq' if USE_GROQ else 'ollama'}  model={MODEL}")
 
 
 def geocode(city):
@@ -75,8 +71,6 @@ def haversine_miles(lat1, lon1, lat2, lon2):
 # ground_office    -> resolve an office name to its real city from the docs
 #                     (e.g. "HQ" -> "New York"), or report not_found - never invents one
 # distance_to / city_facts -> live tools.  DISPATCH maps a tool name to its function.
-# compare_distances-> rank offices by distance IN CODE (the deterministic "which is
-#                     closer" fix; only handed to the model when USE_COMPARE_TOOL=1).
 def search_documents(args, state):
     query = args.get("query", "")
     snippets = collection.query(query_texts=[query], n_results=3)["documents"][0]
@@ -118,24 +112,6 @@ def distance_to(args, state):
     return {"office": g["office"], "city": g["city"], "distance_miles": miles, "from": state["start"]["city"]}
 
 
-def compare_distances(args, state):
-    """Measure several offices and rank them nearest-first, marking the closest one.
-    The 'which is closer' comparison happens HERE in code - so the answer is correct
-    even on a small model that can't reliably tell which distance number is smaller.
-    Unknown offices are reported (never invented), keeping the grounding guarantee."""
-    names = args.get("offices") or args.get("destinations") or []
-    ranked, not_found = [], []
-    for name in names:
-        d = distance_to({"destination": name}, state)
-        if "error" in d:
-            not_found.append({"name": name, "available_offices": d.get("available_offices", [])})
-        else:
-            ranked.append(d)
-    ranked.sort(key=lambda d: d["distance_miles"])
-    print("    [COMPARE] " + ", ".join(f"{d['office']} {d['distance_miles']}mi" for d in ranked))
-    return {"ranked": ranked, "closest": ranked[0] if ranked else None, "not_found": not_found}
-
-
 def city_facts(args, state):
     g = ground_office(args.get("city") or args.get("office") or "", state)
     if g["status"] == "not_found":
@@ -166,30 +142,12 @@ TOOLS_SCHEMA = [
         "parameters": {"type": "object", "properties": {"city": {"type": "string"}}, "required": ["city"]}}},
 ]
 
-# Lab "fix" step: only when USE_COMPARE_TOOL=1 do we expose compare_distances and tell
-# the model to use it. Otherwise the model must compare the distances itself.
-if USE_COMPARE_TOOL:
-    TOOLS_SCHEMA.append({"type": "function", "function": {"name": "compare_distances",
-        "description": "Compare how close several offices are to the user. Returns them sorted "
-                       "nearest-first with the closest marked. Use this for 'which is closer/closest' "
-                       "questions instead of comparing the distances yourself.",
-        "parameters": {"type": "object", "properties": {
-            "offices": {"type": "array", "items": {"type": "string"},
-                        "description": "Office names to compare, e.g. ['HQ', 'Midwest office']."}},
-            "required": ["offices"]}}})
-    DISPATCH["compare_distances"] = compare_distances
-
-CLOSER_RULE = ("For 'which is closer/closest', call compare_distances with every office named and "
-               "report its 'closest' result - never compare the distance numbers yourself. "
-               if USE_COMPARE_TOOL else
-               "For 'which is closer', call distance_to for each office. ")
-
 SYSTEM = (
     "You answer questions about company offices using ONLY the office documents. "
     "Always call search_documents FIRST. Answer ONLY what was asked - do not list other "
     "offices or call distance_to/city_facts for offices the user did not mention. "
     "For 'tell me about <office>', search that office and describe it (its city and snippet); "
-    "compute distance only if asked. " + CLOSER_RULE +
+    "compute distance only if asked. For 'which is closer', call distance_to for each office. "
     "Never substitute a similarly named office for the one the user asked about - if the exact "
     "office the user named is not in the documents, say that, even if a close name exists. "
     'If a tool returns {"error": ..., "available_offices": [...]}, say that office does not exist '

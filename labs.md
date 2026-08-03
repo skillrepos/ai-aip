@@ -368,29 +368,21 @@ Convert 100 USD to EUR
 
 <br><br>
 
-8. When you run additional queries, you may hit free-tier tokens-per-minute caps and see errors like below. The code should automatically wait and retry.
-
-![Hitting token caps](./images/aip70.png?raw=true "Hitting token caps")   
-
-<br><br>
-
-9. Now you can try some partial inputs with missing values to demonstrate the agent remembering arguments that were passed to it before. Here are some to try. Output is shown in the screenshot. (You may see some intermediate steps. You're looking for the one with "Final answer" in it.)
+8. Now you can try some partial inputs with missing values to demonstrate the agent remembering arguments that were passed to it before. Here are some to try. Output is shown in the screenshot. (You may see some intermediate steps. You're looking for the one with "Final answer" in it.)
 
 ```
 Convert 400 to JPY
 Convert 200
 ```
-   
 
 ![Running with partial inputs](./images/aip34.png?raw=true "Running agent")  
 
 
 <br><br>
 
-10. To see the stored history information on disk, type `exit` to exit the tool. Then in the terminal type the command below to see the contents of the file.
+9. To see the stored history information on disk, type "exit" to exit the tool. Then in the terminal type the command below to see the contents of the file.
 
 ```
-exit
 cat currency_memory.json
 ```
 
@@ -398,11 +390,9 @@ cat currency_memory.json
 
 <br><br>
 
-11. Finally, you can start the agent again and enter `history` at the prompt to see the persisted history from before. Then you can try a query and it should pick up as before. In the example, we used the query below:
+10. Finally, you can start the agent again and enter "history" at the prompt to see the persisted history from before. Then you can try a query and it should pick up as before. In the example, we used the query below:
 
 ```
-python curr_conv_agent.py
-history
 convert 300
 ```
 
@@ -410,12 +400,7 @@ convert 300
 
 <br><br>
 
-12. Just type `exit` when ready to quit the tool.
-
-```
-exit
-```
-<br><br>
+11. Just type "exit" when ready to quit the tool.
 
 <p align="center">
 **[END OF LAB]**
@@ -516,16 +501,22 @@ Follow the tagged debug lines to see the agent thinking:
 How far am I from HQ and from the Denver office?
 ```
 
-There is no "Denver office" in the data. Watch the agent split the question in two and search the documents for each office separately: "HQ" comes back with a real address, "Denver office" comes back with three unrelated offices and nothing that matches. So it calls `distance_to` **only** for HQ - and even there, the `[GROUND]` line resolves "New York, NY" to `HQ 123 Main St` before any mileage is computed. You get the real distance for the office that exists, plus a plain statement that the other one is not in the documents. It never invents a Denver mileage, and it never calls a distance tool for an office it has no address for.
+There is no "Denver office" in the data. Watch the agent split the question in two:
 
-Try an "Eastern office" too. That one is more interesting, because there *is* a Northeast office in the data - and a model's instinct is to be helpful and answer about that one instead, quietly swapping the office you asked about for a similar-sounding one it does have. Watch the `[observation]` line when you try it: the Northeast Office comes back among the retrieved snippets, so the substitution is handed to the model on a plate - and it still reports that the Eastern office is not listed. The line in the system prompt that stops it is explicit about that:
+- It searches the documents for each office separately. "HQ" comes back with a real address; "Denver office" comes back with three unrelated offices and no match.
+- It calls `distance_to` **only** for HQ - and there the `[GROUND]` line resolves that name to `HQ 123 Main St` in New York before any mileage is computed.
+- You get a real distance for the office that exists, and a plain statement that the other one is not in the documents.
+
+It never invents a Denver mileage, and never calls a distance tool for an office it has no address for.
+
+Now try `Tell me about the Eastern office`. There *is* a **Northeast** office in the data, and it comes back as the top retrieved snippet - so the tempting substitution is handed to the model on a plate. It still reports that the Eastern office is not listed. What stops it is one line in the system prompt:
 
 ```
 Never substitute a similarly named office for the one the user asked about - if the exact
 office the user named is not in the documents, say that, even if a close name exists.
 ```
 
-Grounding is not just "don't invent facts" - it is also "don't silently answer a different question than the one asked." A retrieval tool that comes back empty-handed can only help if the prompt tells the model to respect it.
+Grounding is not only "don't invent facts" - it is also "don't quietly answer a different question than the one asked."
 
 ![Running agent](./images/aip62.png?raw=true "Running agent") 
 
@@ -537,36 +528,15 @@ Grounding is not just "don't invent facts" - it is also "don't silently answer a
 Which is closer to me, HQ or the Midwest office?
 ```
 
-Watch it call `distance_to` for BOTH offices, then compare the distances in its final answer. It will almost certainly get this right - HQ, at 423.36 miles versus the Midwest office's 640.73.
+Watch the model plan this out on its own: two `distance_to` calls, each with its own `[GROUND]` resolution, then a final answer comparing them - HQ at 423.36 miles versus the Midwest office's 640.73. Nothing in the code told it to make two calls, or in which order, or how to combine the results. The tool schemas only describe *what each tool does*; the plan is the model's.
 
-Now look at *how* it got there. The two `[observation]` lines are hard data from our code. The comparison is not: the model read two numbers and told you in prose which was smaller - rounding them to "approximately 423" and "about 641" on the way out. Nothing in that final sentence is checkable without redoing the arithmetic yourself, nothing guarantees the next query goes the same way, and the answer arrives as English rather than as data your program can use. Older and smaller models used to visibly flub exactly this comparison; current ones usually don't - which makes the problem harder to see, not smaller. Hold onto that - it points straight at the fix in the next step.
+Notice the division of labour, because it is what makes an agent like this trustworthy. The two `[observation]` lines are hard data produced by our code - retrieval, grounding, geocoding, and the distance math are all deterministic and live in tools. What the model contributes is the part that actually needs judgement: deciding which tools to call, and putting the result into a sentence.
 
 ![Running agent](./images/aip52.png?raw=true "Running agent") 
 
-
 <br><br>
 
-7. **The real fix isn't a bigger model - it's a better tool.** A bigger model makes the comparison *more likely* to be right; it never makes it *checkable*. So don't ask the model to do the comparison at all - hand it a tool that does the ranking in code and returns it as data. Stop the agent with `exit`, then enable the comparison tool:
-
-```
-export USE_COMPARE_TOOL=1
-```
-
-<br><br>
-
-8. Start the agent again and run the **same query from step 6**, still on the qwen3.6-27b model. Confirm the top line now shows `compare_tool=on`. This time the agent calls `compare_distances` - watch for the `[COMPARE]` line listing both offices ranked by miles.
-
-The final answer reads much the same as before. What changed is everything behind it: the ranking was computed by `sorted()` in Python, so it is identical on every run and on every model; it arrives as structured data (`{"closest": ..., "ranked": [...]}`) that your code can act on rather than prose it would have to parse; and the `[COMPARE]` line is an audit trail you can point at when someone asks why the agent said what it said. That is the difference between an answer that happens to be right and one you can rely on being right - and it came from moving one deduction out of the model and into code, not from a better model.
-
-```
-Which is closer to me, HQ or the Midwest office?
-```
-
-![Running agent](./images/aip64.png?raw=true "Running agent") 
-
-<br><br>
-
-9. You can also try a more general `goal` (prompt). For example, try the one below:
+7. You can also try a more general `goal` (prompt). For example, try the one below:
 
 ```
 Tell me about the Northeast office and give me an interesting fact about the city it's in.
@@ -577,7 +547,7 @@ This one draws on the model's training to come up with the fact and the RAG data
 
 <br><br>
 
-10. Type `exit` when done.
+8. Type `exit` when done.
 
 <br><br>
 
@@ -589,7 +559,7 @@ In this lab, you:
 - Built a model-driven agentic RAG agent that uses **native tool-calling** to decide its own tool calls.
 - Watched it **retrieve, ground office names to real cities, decompose** multi-part questions, **self-check**, and either answer or **honestly decline**.
 - Saw, in the debug output, the agentic-RAG pillars in action: multi-step reasoning, live tools & APIs, and self-checks & retries.
-- Learned a core agentic lesson: when the model is unreliable at something **deterministic** (here, comparing distances), move that work into a **tool** - don't just reach for a bigger model.
+- Saw the division of labour that makes an agent trustworthy: **deterministic work lives in tools** (retrieval, grounding, geocoding, distance), while **planning and phrasing stay with the model**.
 
 <p align="center">
 **[END OF LAB]**
