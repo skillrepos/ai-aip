@@ -1,7 +1,7 @@
 # Implementing AI Agents in Python
 ## Using frameworks, MCP, and RAG for agentic AI
 ## Session labs 
-## Revision 1.32 - 08/03/26
+## Revision 1.33 - 08/03/26
 
 **Follow the startup instructions in the README.md file IF NOT ALREADY DONE!**
 
@@ -368,21 +368,29 @@ Convert 100 USD to EUR
 
 <br><br>
 
-8. Now you can try some partial inputs with missing values to demonstrate the agent remembering arguments that were passed to it before. Here are some to try. Output is shown in the screenshot. (You may see some intermediate steps. You're looking for the one with "Final answer" in it.)
+8. When you run additional queries, you may hit free-tier tokens-per-minute caps and see errors like below. The code should automatically wait and retry.
+
+![Hitting token caps](./images/aip70.png?raw=true "Hitting token caps")   
+
+<br><br>
+
+9. Now you can try some partial inputs with missing values to demonstrate the agent remembering arguments that were passed to it before. Here are some to try. Output is shown in the screenshot. (You may see some intermediate steps. You're looking for the one with "Final answer" in it.)
 
 ```
 Convert 400 to JPY
 Convert 200
 ```
+   
 
 ![Running with partial inputs](./images/aip34.png?raw=true "Running agent")  
 
 
 <br><br>
 
-9. To see the stored history information on disk, type "exit" to exit the tool. Then in the terminal type the command below to see the contents of the file.
+10. To see the stored history information on disk, type `exit` to exit the tool. Then in the terminal type the command below to see the contents of the file.
 
 ```
+exit
 cat currency_memory.json
 ```
 
@@ -390,9 +398,11 @@ cat currency_memory.json
 
 <br><br>
 
-10. Finally, you can start the agent again and enter "history" at the prompt to see the persisted history from before. Then you can try a query and it should pick up as before. In the example, we used the query below:
+11. Finally, you can start the agent again and enter `history` at the prompt to see the persisted history from before. Then you can try a query and it should pick up as before. In the example, we used the query below:
 
 ```
+python curr_conv_agent.py
+history
 convert 300
 ```
 
@@ -400,7 +410,12 @@ convert 300
 
 <br><br>
 
-11. Just type "exit" when ready to quit the tool.
+12. Just type `exit` when ready to quit the tool.
+
+```
+exit
+```
+<br><br>
 
 <p align="center">
 **[END OF LAB]**
