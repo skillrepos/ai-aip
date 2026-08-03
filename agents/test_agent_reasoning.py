@@ -10,14 +10,6 @@ from unittest.mock import Mock, patch, MagicMock
 from smolagents import ToolCallingAgent, LiteLLMModel, tool
 
 
-# --- Model provider for the REAL-agent tests: the LOCAL Ollama model, on purpose. ---
-# These tests deliberately ignore the AGENT_PROVIDER=groq you exported in Lab 3. On Groq
-# this compound query fails roughly two runs in three - not because the agent is wrong,
-# but because Groq validates tool-call formatting server-side and rejects the reply when
-# the model answers in text at some step. A red test would look like your code broke.
-# The local model is slower and usually solves one half of the query rather than both,
-# which the assertion below allows on purpose.
-# (Instructors: export LAB7_PROVIDER=groq to demo the both-tools run on Groq.)
 def build_test_model():
     provider = os.environ.get("LAB7_PROVIDER", "").strip().lower()
     groq_key = os.environ.get("GROQ_API_KEY", "").strip()
@@ -32,10 +24,6 @@ def build_test_model():
     return LiteLLMModel(model_id=model, api_base="http://localhost:11434")
 
 
-# Groq validates tool-call formatting on its own side. Small and reasoning-tuned
-# models occasionally emit the final answer as plain text instead of as a tool call,
-# which comes back as a "tool_use_failed" error even though nothing is wrong with the
-# agent. Retrying clears it - without this, these live tests flake for no real reason.
 def run_with_retry(agent, prompt, attempts=3):
     """Run the agent, retrying with more variety if a tool call comes back malformed."""
     original = dict(getattr(agent.model, "kwargs", {}) or {})
