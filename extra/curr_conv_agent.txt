@@ -1,6 +1,7 @@
 import os
 import json
 import re
+import time
 import requests
 from smolagents import CodeAgent, LiteLLMModel, tool
 
@@ -90,6 +91,60 @@ def calculate(expression: str) -> float:
         raise RuntimeError(f"Calculation error: {e}")
 
 # -----------------------------------------------------------------------------
+# RATE-LIMIT BACKOFF (given code - already merged for you)
+# -----------------------------------------------------------------------------
+# Groq's free tier caps this model at 8,000 tokens per minute. A CodeAgent re-sends
+# the whole conversation on every step, so one ordinary multi-step run can reach
+# that ceiling by itself and die partway through with a RateLimitError.
+#
+# The cap is a rolling one-minute window and Groq's reply tells us exactly how long
+# to wait ("Please try again in 19.2075s"), so the cure is simply to wait and
+# re-issue the SAME request. We retry inside the model wrapper rather than around
+# agent.run() on purpose: this way the agent keeps the steps it already completed,
+# instead of starting over and spending those tokens a second time.
+
+RATE_LIMIT_WAITS = 5           # how many times we're willing to wait it out
+DEFAULT_WAIT_SECONDS = 20.0    # used only if the reply doesn't name a wait time
+
+
+def is_rate_limit_error(err):
+    """True for a provider throttle - as opposed to a real failure worth surfacing."""
+    if type(err).__name__ == "RateLimitError":
+        return True
+    text = str(err).lower()
+    return "rate_limit_exceeded" in text or "ratelimiterror" in text
+
+
+def is_daily_limit(err):
+    """Per-day quotas don't clear in a minute, so waiting on them is pointless."""
+    text = str(err).lower()
+    return "per day" in text or "(tpd)" in text or "(rpd)" in text
+
+
+def seconds_to_wait(err):
+    """Pull the wait time Groq suggests out of its own error message."""
+    found = re.search(r"try again in ([\d.]+)\s*s", str(err), re.IGNORECASE)
+    return float(found.group(1)) + 1.0 if found else DEFAULT_WAIT_SECONDS
+
+
+class RateLimitRetryModel(LiteLLMModel):
+    """A LiteLLMModel that waits out a rate limit instead of failing the run."""
+
+    def generate(self, *args, **kwargs):
+        for attempt in range(RATE_LIMIT_WAITS + 1):
+            try:
+                return super().generate(*args, **kwargs)
+            except Exception as err:
+                out_of_tries = attempt == RATE_LIMIT_WAITS
+                if out_of_tries or is_daily_limit(err) or not is_rate_limit_error(err):
+                    raise
+                wait = seconds_to_wait(err)
+                print(f"[RATE LIMIT] Free-tier tokens-per-minute cap reached. "
+                      f"Waiting {wait:.0f}s, then retrying this step "
+                      f"({attempt + 1} of {RATE_LIMIT_WAITS}).")
+                time.sleep(wait)
+
+# -----------------------------------------------------------------------------
 # AGENT CONFIGURATION
 # -----------------------------------------------------------------------------
 # >>>>> MERGE NOTE (Lab 3 model provider): build_model() lets this lab run on the
@@ -110,11 +165,11 @@ def build_model():
         if not model_name.startswith("groq/"):
             model_name = "groq/" + model_name
         print(f"[MODEL] provider=groq  model={model_name}")
-        return LiteLLMModel(model_id=model_name, api_key=groq_key, temperature=0.0)
+        return RateLimitRetryModel(model_id=model_name, api_key=groq_key, temperature=0.0)
     print(f"[MODEL] provider=ollama  model=ollama_chat/llama3.2  "
           f"(AGENT_PROVIDER={provider!r}, GROQ_API_KEY={'set' if groq_key else 'NOT set'}; "
           f"to use Groq you must EXPORT both: export AGENT_PROVIDER=groq; export GROQ_API_KEY=...)")
-    return LiteLLMModel(
+    return RateLimitRetryModel(
         model_id="ollama_chat/llama3.2",
         api_base="http://localhost:11434",
         num_ctx=4096,

@@ -31,7 +31,13 @@ DEFAULT_LOCATION = {"city": "Raleigh, NC", "lat": 35.7796, "lon": -78.6382}
 # --- Model provider: Groq if AGENT_PROVIDER=groq and GROQ_API_KEY are exported, else local Ollama ---
 USE_GROQ = os.environ.get("AGENT_PROVIDER", "").strip().lower() == "groq" and os.environ.get("GROQ_API_KEY", "").strip()
 if USE_GROQ:
-    client = OpenAI(base_url="https://api.groq.com/openai/v1", api_key=os.environ["GROQ_API_KEY"].strip())
+    # max_retries=6: Groq's free tier caps this model at 8,000 tokens per minute, and a
+    # RAG prompt carries document chunks, so a run can hit that ceiling. The OpenAI SDK
+    # retries a 429 for us - it honors Groq's "retry-after" and otherwise backs off
+    # exponentially - but its default of 2 retries gives up after ~1.4s, long before a
+    # one-minute token bucket refills. Six retries covers the wait.
+    client = OpenAI(base_url="https://api.groq.com/openai/v1",
+                    api_key=os.environ["GROQ_API_KEY"].strip(), max_retries=6)
     MODEL = os.environ.get("AGENT_MODEL", "qwen/qwen3.6-27b").strip()
 else:
     client = OpenAI(base_url="http://localhost:11434/v1", api_key="ollama")

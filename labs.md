@@ -1,7 +1,7 @@
 # Implementing AI Agents in Python
 ## Using frameworks, MCP, and RAG for agentic AI
 ## Session labs 
-## Revision 1.31 - 07/30/26
+## Revision 1.32 - 08/03/26
 
 **Follow the startup instructions in the README.md file IF NOT ALREADY DONE!**
 
@@ -309,6 +309,8 @@ export AGENT_PROVIDER=groq
 export GROQ_API_KEY=<paste-your-key-here>
 ```
 
+**NOTE: about Groq's free tier and this lab.** Groq's free plan allows 8,000 tokens per minute on this model. A CodeAgent re-sends the whole conversation on every step, so a single run of this lab can reach that ceiling on its own - especially once memory starts replaying earlier conversions. If it does, Groq replies with a `rate_limit_exceeded` error that names how long to wait. **The lab code handles this for you**: it waits the requested time and retries the same step, so you'll see a line like `[RATE LIMIT] Free-tier tokens-per-minute cap reached. Waiting 20s...` and then the run continues. A pause of 20-30 seconds mid-run is expected on a free key, not a failure. If you'd rather not wait at all, skip the `export` above and the lab runs on the local `llama3.2` model with no limits.
+
 <br><br>
 
 2. For this lab, we have a simple application that does currency conversion using prompts of the form "Convert 100 USD to EUR", where *USD* = US dollars and *EUR* = euros.  It will also remember previous values and invocations.
@@ -327,6 +329,7 @@ The code in this application showcases several SmolAgents features and agent tec
 - **build_model()** chooses the agent's reasoning engine: the stronger hosted **Groq** model if you set up Groq, otherwise the local Ollama `llama3.2` - so the same code runs either way.  
 - **CodeAgent** runs a ReAct loop: think (LLM), act (call tool), observe, repeat.  
 - **Memory feature** remembers current values and persists them (with history) to an external JSON file.  
+- **RateLimitRetryModel** (given code, already merged) wraps the model so a free-tier rate limit pauses and resumes the current step instead of ending the run.  
 <br>
 
 
@@ -435,6 +438,10 @@ echo "provider=$AGENT_PROVIDER  key=$([ -n "$GROQ_API_KEY" ] && echo set || echo
 ```
 
 You should see `provider=groq  key=set`. If not, re-run the two `export` lines from the setup section. (If you genuinely can't use Groq, skip to the *Offline fallback* note at the end of this lab to run the deterministic `rag_agent.py` on the local model instead.)
+
+<br><br>
+
+**NOTE: Groq free-tier rate limits.** As in Lab 3, the free plan allows 8,000 tokens per minute, and a RAG prompt carries retrieved document chunks - so a run can reach that ceiling. The agent's client is configured to retry a rate-limited call automatically, so a step may simply take longer than usual on a free key. No action needed.
 
 <br><br>
 
