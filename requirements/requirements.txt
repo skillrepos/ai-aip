@@ -1,3 +1,7 @@
+# Use the PyTorch CPU wheels for local environments without CUDA.
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.13.0+cpu
+
 # ── LangChain & Ollama integration ───────────────────────────────────────
 langchain==0.3.26
 langchain-community==0.3.26

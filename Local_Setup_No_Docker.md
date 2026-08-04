@@ -56,21 +56,21 @@ where python    # Windows
 
 If the repo includes helper scripts (e.g., `scripts/pysetup.sh`), prefer using them. Otherwise install from requirements files.
 
-### Option A — Use setup script (if present)
+### Option A — Use setup script (recommended)
 ```bash
 # macOS/Linux or Windows via Git Bash/WSL
 bash -i scripts/pysetup.sh py_env
 ```
 
+This script upgrades `pip` and installs dependencies using the CPU PyTorch wheel index, which avoids hangs on machines without CUDA.
+
 ### Option B — Manual install from requirements
 ```bash
 pip install --upgrade pip wheel
-# If a single file exists:
-# pip install -r requirements.txt
-# If multiple pinned files exist:
-# pip install -r requirements/base.txt
-# pip install -r requirements/dev.txt
+pip install --extra-index-url https://download.pytorch.org/whl/cpu -r requirements/requirements.txt
 ```
+
+If the repository later adds separate `requirements/base.txt` or `requirements/dev.txt` files, install them with the same `--extra-index-url` flag.
 
 ---
 
