@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
 Comprehensive Ollama Warmup for AI Agents Workshop
-Preloads all models and execution paths used across Labs 1-10
+Preloads all models and execution paths used across Labs 1-8
 
 This script:
-- Loads llama3.2:1b and llama3.2:3b into memory
+- Loads the local llama3.2 model into memory
 - Exercises tool calling paths (LangChain, SmolAgents, AutoGen)
 - Warms up JSON formatting paths
-- Preloads embedding model for Lab 4
+- Pre-downloads the sentence-transformers embedding model used by Lab 4
 - Caches common tokenization patterns
 
 Run this BEFORE workshop starts to ensure fast lab performance!
@@ -388,28 +388,27 @@ def warmup_lab_patterns(host: str, model: str, keep_alive: str = "15m"):
         return None
 
 
-def warmup_embedding_model(host: str, model: str = "nomic-embed-text", keep_alive: str = "15m"):
-    """Warm up embedding model for Lab 4 (RAG)"""
-    print_step("EMBED", f"Warming up embedding model: {model}...")
+def warmup_embedding_model(host: str, model: str = "all-MiniLM-L6-v2", keep_alive: str = "15m"):
+    """Pre-download the embedding model the RAG labs use (Lab 4).
 
-    # Check if embedding model exists
-    local_models = list_local_models(host)
-    if not any(model in m for m in local_models):
-        print_warning(f"Embedding model {model} not found locally")
-        print(f"  {YELLOW}→ Attempting to pull...{RESET}")
-        if not pull_model(host, model):
-            print_error(f"Could not pull embedding model {model}")
-            print_warning("Lab 4 (RAG) may be slow on first run")
-            return None
-
-    success, dt = embed_once(host, model, keep_alive=keep_alive)
-
-    if success:
-        print_success(f"Embedding warmup: {dt:.2f}s")
-        return dt
-    else:
-        print_error(f"Embedding warmup failed")
+    Both rag_agent.py and agentic_rag_agent.py embed through ChromaDB's
+    SentenceTransformerEmbeddingFunction, which pulls the model from Hugging Face
+    on first use - NOT through Ollama. Downloading it here keeps that ~90MB fetch
+    out of the middle of the lab.
+    """
+    print_step("EMBED", f"Pre-loading embedding model: {model}...")
+    t0 = time.time()
+    try:
+        from sentence_transformers import SentenceTransformer
+        m = SentenceTransformer(model)
+        m.encode(["Sample text for embedding warmup"])
+    except Exception as e:
+        print_error(f"Embedding warmup failed: {e}")
+        print_warning("Lab 4 (RAG) will download the model on first run instead")
         return None
+    dt = time.time() - t0
+    print_success(f"Embedding model ready: {dt:.2f}s")
+    return dt
 
 
 def warmup_parallel(host: str, model: str, reps: int = 3, keep_alive: str = "15m"):
@@ -530,13 +529,13 @@ Examples:
     parser.add_argument(
         "--embed",
         action="store_true",
-        help="Also warm up embedding model for Lab 4 (RAG)"
+        help="Also pre-download the embedding model for Lab 4 (RAG)"
     )
 
     parser.add_argument(
         "--embed-model",
-        default="nomic-embed-text",
-        help="Embedding model to use (default: nomic-embed-text)"
+        default="all-MiniLM-L6-v2",
+        help="Embedding model to use (default: all-MiniLM-L6-v2)"
     )
 
     parser.add_argument(

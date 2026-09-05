@@ -38,7 +38,10 @@ if USE_GROQ:
     # one-minute token bucket refills. Six retries covers the wait.
     client = OpenAI(base_url="https://api.groq.com/openai/v1",
                     api_key=os.environ["GROQ_API_KEY"].strip(), max_retries=6)
-    MODEL = os.environ.get("AGENT_MODEL", "qwen/qwen3.6-27b").strip()
+    # openai/gpt-oss-120b is a Groq PRODUCTION model with solid native tool-calling.
+    # Override with AGENT_MODEL=<id> if Groq's catalog changes; scripts/check-groq.sh
+    # lists what your key can currently reach.
+    MODEL = os.environ.get("AGENT_MODEL", "openai/gpt-oss-120b").strip()
 else:
     client = OpenAI(base_url="http://localhost:11434/v1", api_key="ollama")
     MODEL = os.environ.get("AGENT_MODEL", "llama3.2").strip()

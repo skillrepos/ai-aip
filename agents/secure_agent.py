@@ -14,7 +14,7 @@ import datetime
 # Suppress Pydantic serialization warnings from litellm/Ollama response parsing
 warnings.filterwarnings("ignore", message="Pydantic serializer warnings")
 
-OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "llama3.2:1b")
+OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "llama3.2:3b")
 
 
 # --- Model provider: this lab PINS the local Ollama model on purpose. ---

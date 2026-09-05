@@ -20,7 +20,11 @@ llm_config = {
 code_writer = AssistantAgent(
     name="code_writer",
     llm_config=llm_config,
-    system_message="You write Python code. Output ONLY code, no explanations.",
+    system_message=(
+        "You write Python code. Output ONLY code, no explanations.\n"
+        "The code is run non-interactively, so never call input() and never read\n"
+        "from a file - use hardcoded example values and print the results."
+    ),
 )
 
 critic = AssistantAgent(
@@ -39,7 +43,11 @@ critic = AssistantAgent(
 fixer = AssistantAgent(
     name="fixer",
     llm_config=llm_config,
-    system_message="You fix Python code based on critique. Return ONLY fixed code.",
+    system_message=(
+        "You fix Python code based on critique. Return ONLY fixed code.\n"
+        "The code is run non-interactively, so never call input() - use hardcoded\n"
+        "example values and print the results."
+    ),
 )
 
 # ── Code Cleanup ───────────────────────────────────────────────
@@ -60,6 +68,7 @@ def simulate_runtime_feedback(code: str) -> str:
             ["python", temp_path],
             capture_output=True,
             text=True,
+            stdin=subprocess.DEVNULL,   # no terminal: interactive code fails fast
             timeout=10
         )
         output = result.stdout.strip()

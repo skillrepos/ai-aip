@@ -38,7 +38,9 @@ The codespace is ready to use when you see a prompt like the one shown below in 
 
 <br><br>
 
-**4. Get a free API key for groq to enable use of more powerful models for some of the labs.**
+**4. Get a free API key for Groq to enable use of more powerful models for Labs 3 and 4.**
+
+Labs 3 and 4 need a model larger than the codespace can run. Groq hosts one free (no credit card). The other labs run entirely on the local model.
 
 a. In a browser, go to https://console.groq.com and create an account. (If you have an email with a button to confirm, make sure the link is trying to open in the same browser where you were using groq before. If not, you can copy the link from the "click here" section and paste into the right browser.)
 
@@ -73,9 +75,21 @@ Afterwards, you should see output that indicates two environment variables (AGEN
 
 ![Getting API key](./images/aip60.png?raw=true "Getting API key")
 
+To confirm the key works and that the lab models are reachable, run:
+
+```
+bash scripts/check-groq.sh
+```
+
+You should see `OK` for both models. If a model ever reports `FAIL` because Groq has retired it, the script lists the models your key *can* reach - pick one and `export AGENT_MODEL=<model-id>` before running the lab.
+
+![Checking the Groq setup](./images/aip72.png?raw=true "Checking the Groq setup")
+
 <br><br>
 
 **6. Run the *warm-up* script for faster LLM interactions.**
+
+This loads the local model into memory and pre-downloads the embedding model Lab 4 needs, so neither download happens in the middle of a lab.
 
 ```
 python scripts/warmup.py --embed --keep-alive 300m --auto-pull &

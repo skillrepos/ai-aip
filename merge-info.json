@@ -318,9 +318,9 @@
     "extra/reflect_agent.txt": [
       {
         "anchor": "code_writer = AssistantAgent(",
-        "lines": 24,
+        "lines": 32,
         "title": "Writer, critic, fixer agents",
-        "note": "**The three roles of the reflective pattern: one writes code, one reviews it (PASS/FAIL), one fixes it.** Each is an AG2 AssistantAgent with a focused system message."
+        "note": "**The three roles of the reflective pattern: one writes code, one reviews it (PASS/FAIL), one fixes it.** Each is an AG2 AssistantAgent with a focused system message - note that the writer and fixer are both told the code runs non-interactively, so they never emit input() calls that would hang the sandbox."
       },
       {
         "anchor": "def simulate_runtime_feedback(code: str) -> str:",

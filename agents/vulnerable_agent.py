@@ -11,7 +11,7 @@ from smolagents import ToolCallingAgent, LiteLLMModel, tool
 # Suppress Pydantic serialization warnings from litellm/Ollama response parsing
 warnings.filterwarnings("ignore", message="Pydantic serializer warnings")
 
-OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "llama3.2:1b")
+OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "llama3.2:3b")
 
 # --- Model provider: this lab PINS the local Ollama model on purpose. ---
 # Unlike Labs 3, 4, and 7, this lab ignores the AGENT_PROVIDER=groq you exported earlier.
@@ -176,7 +176,7 @@ def main():
 
     # NOTE: If Ollama fails due to memory constraints, you can set
     # OLLAMA_MODEL to a smaller model or increase container resources
-    print("[INFO] Note: Agent requires ~2-4GB RAM for llama3.2:1b")
+    print("[INFO] Note: Agent requires ~2-4GB RAM for llama3.2:3b")
     print()
 
     try:
@@ -193,7 +193,7 @@ def main():
         print(f"[ERROR] Failed to initialize agent: {e}")
         print("\nTroubleshooting:")
         print("1. Ensure Ollama is running: curl http://localhost:11434/api/tags")
-        print("2. Try a smaller model: export OLLAMA_MODEL=llama3.2:1b")
+        print("2. Pull a smaller model first: ollama pull llama3.2:1b && export OLLAMA_MODEL=llama3.2:1b")
         print("3. Check container resources (agent needs ~2-4GB RAM)")
         print("4. For workshop demos, consider using recorded outputs")
         return
