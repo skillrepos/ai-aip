@@ -110,6 +110,12 @@
     ],
     "extra/lab2_mcp_agent.txt": [
       {
+        "anchor": "NUMBER_RE = re.compile(",
+        "endAnchor": "return {float(n) for n in NUMBER_RE.findall(text)}",
+        "title": "Collect the numbers the agent has seen",
+        "note": "**`numbers_in()` pulls every number out of a piece of text.** The loop keeps a running set of them - the only numbers a tool call may use."
+      },
+      {
         "anchor": "async def run_dynamic(city: str, question: str, max_steps: int = 10) -> None:",
         "lines": 9,
         "title": "The dynamic agent loop",
@@ -132,6 +138,16 @@
           "**Asks the LLM for its next Action and extracts it with a regex.**",
           "- Small models sometimes reply `Thought: DONE` with no `Action:` line - that counts as DONE too",
           "- Anything else unparseable ends the run cleanly"
+        ]
+      },
+      {
+        "anchor": "# ---- PROVENANCE CHECK: numbers must come from observations ----",
+        "endAnchor": "continue",
+        "title": "Provenance check: no invented numbers",
+        "note": [
+          "**A number the model passes to a tool must have appeared in an earlier Observation (or the question).**",
+          "- Small models 'know' roughly where New York is and type the coordinates from memory - a hallucinated argument",
+          "- Rejected calls are sent back with an Observation telling the model to call the tool that produces the value"
         ]
       },
       {
@@ -192,7 +208,7 @@
         "title": "Seed messages from discovery",
         "note": [
           "**The system message is `build_system_prompt(tools)` - built from what the server just advertised.**",
-          "- The user message is the question you typed, passed through untouched"
+          "- The user message is your question plus the detected city, with a reminder that it does not know any numbers - it must look them up"
         ]
       },
       {

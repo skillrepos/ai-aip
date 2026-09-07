@@ -6,7 +6,7 @@ A robust FastMCP server that provides weather and geocoding services via HTTP.
 
 Tools Provided
 --------------
-1. get_weather(lat, lon) → dict with temperature °C, WMO code, conditions
+1. get_weather(lat, lon) → dict with temperature_c, WMO code, conditions
 2. convert_c_to_f(c) → float (temperature in °F)
 3. geocode_location(name) → dict with latitude, longitude, location name
 
@@ -94,7 +94,7 @@ def get_weather(lat: float, lon: float) -> dict:
     -------
     dict
         {
-            "temperature": <float °C>,
+            "temperature_c": <float °C>,
             "code":        <int WMO weathercode>,
             "conditions":  <friendly description>,
             "error":       <error message if request failed>
@@ -128,7 +128,7 @@ def get_weather(lat: float, lon: float) -> dict:
             cw = resp.json()["current_weather"]
             code = cw["weathercode"]
             return {
-                "temperature": cw["temperature"],
+                "temperature_c": cw["temperature"],
                 "code":        code,
                 "conditions":  WEATHER_CODES.get(code, "Unknown"),
             }
