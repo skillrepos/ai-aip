@@ -187,10 +187,11 @@
       },
       {
         "anchor": "def _params(tool) -> dict:",
-        "lines": 43,
+        "lines": 58,
         "title": "Turn discovered tools into prompt text",
         "note": [
           "**Reads each tool's `inputSchema` to build its signature, description, and example.**",
+          "- Examples are ordered from the schemas: text-only tools first, tools with numeric args after (their numbers must come from an Observation)",
           "- `build_system_prompt()` fills the template's placeholders",
           "- Add a tool to the server and the agent learns it - no edit here"
         ]

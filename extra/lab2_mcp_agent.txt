@@ -116,12 +116,27 @@ def format_tool_catalogue(tools) -> str:
     return "\n\n".join(blocks)
 
 
+def _needs_lookup(tool) -> list[str]:
+    """Names of this tool's numeric arguments - values only another tool can supply."""
+    return [n for n, p in _params(tool).items() if p.get("type") in ("number", "integer")]
+
+
 def format_tool_examples(tools) -> str:
-    """Build one worked Thought/Action/Args example per discovered tool."""
+    """Build one worked Thought/Action/Args example per discovered tool.
+
+    Ordered by what discovery tells us about the arguments: tools that take only
+    text (a place name from the question) come first, tools that take numbers
+    come after, because those numbers must come from an earlier Observation.
+    Nothing here names a specific tool - the order falls out of the schemas.
+    """
     examples = []
-    for tool in tools:
+    for tool in sorted(tools, key=lambda t: bool(_needs_lookup(t))):
         args = ", ".join(f'"{n}": {_sample(p)}' for n, p in _params(tool).items())
-        examples.append(f"Thought: I need to use {tool.name}\n"
+        needs = _needs_lookup(tool)
+        thought = (f"I need to use {tool.name} - its {', '.join(needs)} must be copied "
+                   f"from an earlier Observation" if needs
+                   else f"I need to use {tool.name}")
+        examples.append(f"Thought: {thought}\n"
                         f"Action: {tool.name}\n"
                         f"Args: {{{args}}}")
     return "\n\n".join(examples)
