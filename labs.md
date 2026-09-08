@@ -1,7 +1,7 @@
 # Implementing AI Agents in Python
 ## Using frameworks, MCP, and RAG for agentic AI
 ## Session labs 
-## Revision 1.42 - 09/07/26
+## Revision 1.43 - 09/08/26
 
 **Follow the startup instructions in the README.md file IF NOT ALREADY DONE!**
 
