@@ -6,9 +6,8 @@ A robust FastMCP server that provides weather and geocoding services via HTTP.
 
 Tools Provided
 --------------
-1. get_weather(lat, lon) → dict with temperature °C, WMO code, conditions
-2. convert_c_to_f(c) → float (temperature in °F)
-3. geocode_location(name) → dict with latitude, longitude, location name
+1. get_weather(lat, lon) → dict with temperature_c, WMO code, conditions
+2. geocode_location(name) → dict with latitude, longitude, location name
 
 Key Features
 ------------
@@ -92,8 +91,6 @@ mcp = FastMCP("WeatherServer")
 
     Returns
     -------
-   
-
 
     last_error = None
 
@@ -113,7 +110,6 @@ mcp = FastMCP("WeatherServer")
                     continue
 
             resp.raise_for_status()
-
 
 
         except requests.HTTPError as e:
@@ -140,12 +136,6 @@ mcp = FastMCP("WeatherServer")
     return {
         "error": f"Weather service failed after {MAX_RETRIES} attempts (last error: {last_error}). Please try again later."
     }
-
-
-# ─── Temperature Conversion Tool ─────────────────────────────────────
-
-@mcp.tool
-
 
 
 # ─── Geocoding Tool ──────────────────────────────────────────────────
@@ -234,3 +224,4 @@ def geocode_location(name: str) -> dict:
 if __name__ == "__main__":
     # Start HTTP server using FastAPI + Uvicorn
     # Clients connect to: http://127.0.0.1:8000/mcp/
+
