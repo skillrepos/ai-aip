@@ -1,7 +1,7 @@
 # Implementing AI Agents in Python
 ## Using frameworks, MCP, and RAG for agentic AI
 ## Session labs 
-## Revision 1.44 - 09/08/26
+## Revision 1.45 - 09/08/26
 
 **Follow the startup instructions in the README.md file IF NOT ALREADY DONE!**
 
@@ -334,6 +334,8 @@ echo "provider=$AGENT_PROVIDER  key=$([ -n "$GROQ_API_KEY" ] && echo set || echo
 
 You should see `provider=groq  key=set`. A CodeAgent re-sends the whole conversation each step, so this lab does hit the free-tier limit and pause part-way through - that's expected. (Without Groq it still runs, on the slower local `llama3.2`.)
 
+NOTE: If you see `provider= key=set` try the command in a new terminal to make sure the provider value is set.
+
 <br><br>
 
 2. The application converts currency from prompts like "Convert 100 USD to EUR", and remembers previous values.
@@ -392,6 +394,13 @@ Convert 100 USD to EUR
 <br><br>
 
 8. Now try partial inputs - the agent fills in the missing pieces from memory. Look for the line with "Final answer" in it.
+
+> NOTE: You may see warnings like the following if the remote's tokens-per-minute cap is reached. The code will wait and retry. It may do this more than once, but should eventually complete the task.
+>
+> ![Capacity warnings](./images/aip76.png?raw=true "Capacity warnings") 
+>
+
+<br><br>
 
 ```
 Convert 400 to JPY
