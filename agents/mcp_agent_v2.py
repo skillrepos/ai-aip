@@ -63,7 +63,7 @@ def unwrap(obj):
     return obj
 
 # ╔══════════════════════════════════════════════════════════════════╗
-# ║ 4.  LLM-based city extractor (unchanged)                         ║
+# ║ 4.  LLM-based city extractor                                     ║
 # ╚══════════════════════════════════════════════════════════════════╝
 # Uses a separate LLM call to extract city names from natural language.
 # This handles inputs like "What's the weather in Paris?" → "Paris"
@@ -118,10 +118,6 @@ def extract_city(prompt: str) -> Optional[str]:
                     for name, value in gathered)
                 answer = llm.invoke(
                     f"Question: {question}\n\nTool results:\n{results}\n\n"
-                    "Write ONE sentence answering the question. Use ONLY the numbers "
-                    "and words shown above, copied exactly - never calculate or convert "
-                    "anything yourself. A field name ending in _c is degrees Celsius; a "
-                    "convert_c_to_f result is degrees Fahrenheit.").content.strip()
 
                 print("\nFinal Answer:")
                 print(f"  {answer}")
