@@ -1,7 +1,7 @@
 # Implementing AI Agents in Python
 ## Using frameworks, MCP, and RAG for agentic AI
 ## Session labs 
-## Revision 1.41 - 09/07/26
+## Revision 1.42 - 09/07/26
 
 **Follow the startup instructions in the README.md file IF NOT ALREADY DONE!**
 
@@ -203,7 +203,7 @@ python mcp_agent_v2.py
 
 <br><br>
 
-8. Prompt the agent with the question below. It picks the city out of your question, opens its MCP connection, and prints `Discovered 3 tool(s) from the MCP server` - it learned its tools from the server rather than having them hardcoded. Then you get the usual TAO output and a **Final Answer** in plain English with the conditions and temperature. If the model tries to type coordinates from its own memory instead of looking them up, you'll see a ⚠️ *Rejected* line - the agent only accepts numbers that came from a tool result - and the model is sent back to call `geocode_location` first. (The LLM chooses which discovered tools it needs, so your run may use a different set than the screenshot.) Watch the server INFO messages appear in the other terminal too.
+8. Prompt the agent with the question below. It picks the city out of your question, opens its MCP connection, and prints `Discovered 2 tool(s) from the MCP server` - it learned its tools from the server rather than having them hardcoded. Then you get the usual TAO output and a **Final Answer** in plain English with the conditions and temperature. (The LLM chooses which discovered tools it needs, so your run may use a different set than the screenshot.) Watch the server INFO messages appear in the other terminal too.
 
 ```
 What is the weather in New York?
@@ -213,7 +213,7 @@ What is the weather in New York?
 
 <br><br>
 
-9. Now let's prove discovery is doing real work by adding a **fourth** tool the server doesn't offer today. Stop the client with `exit` and the server with `CTRL-C`, then open the server file:
+9. Now let's prove discovery is doing real work by adding a **third** tool the server doesn't offer today. Stop the client with `exit` and the server with `CTRL-C`, then open the server file:
 
 ```
 code mcp_server_v2.py
@@ -263,7 +263,7 @@ python ../scripts/discover_tools.py
 python mcp_agent_v2.py
 ```
 
-The discovery script now lists **four** tools and the agent reports `Discovered 4 tool(s)`. Ask it something only the new tool can answer:
+The discovery script now lists **three** tools and the agent reports `Discovered 3 tool(s)`. Ask it something only the new tool can answer:
 
 ```
 What is tomorrow's forecast for New York?

@@ -76,10 +76,34 @@ class RateLimitRetryModel(LiteLLMModel):
 # -----------------------------------------------------------------------------
 # AGENT CONFIGURATION
 # -----------------------------------------------------------------------------
-# >>>>> MERGE NOTE (Lab 3 model provider): build_model() lets this lab run on the
-# stronger hosted Groq model for better code-writing/tool selection, while still
-# defaulting to local Ollama. If AGENT_PROVIDER=groq AND GROQ_API_KEY are set we
-# use Groq; if either is unset we transparently fall back to local Ollama.
+# >>>>> MERGE NOTE (Lab 3 model provider):
+#   Which model the CodeAgent reasons with. Two environment variables decide:
+#
+#     AGENT_PROVIDER=groq  +  GROQ_API_KEY   ->  the hosted model named below
+#     either one missing                     ->  the local Ollama model
+#
+#   The hosted model is stronger at writing code and picking tools. If Groq has
+#   withdrawn it, the lab spots that and uses the local model too - so the lab
+#   always runs, just slower.
+
+GROQ_MODEL = "qwen/qwen3.6-27b"   # the hosted model this lab prefers
+
+
+def groq_offers(key, model):
+    """True if this Groq key can reach that model right now.
+
+    Hosted catalogues change. Asking first means a withdrawn model makes the lab
+    slower (it runs locally) rather than making it fail.
+    """
+    try:
+        listed = requests.get("https://api.groq.com/openai/v1/models",
+                              headers={"Authorization": f"Bearer {key}"},
+                              timeout=10).json()["data"]
+    except Exception:
+        return True          # can't tell - assume it is there and let the call say
+    return any(m["id"] == model for m in listed)
+
+
 def build_model():
     """Return the LLM the CodeAgent reasons with.
 
@@ -89,15 +113,19 @@ def build_model():
     """
     provider = os.environ.get("AGENT_PROVIDER", "").strip().lower()
     groq_key = (os.environ.get("GROQ_API_KEY") or "").strip()
-    if provider == "groq" and groq_key:
-        model_name = os.environ.get("AGENT_MODEL", "qwen/qwen3.6-27b").strip()
+    override = os.environ.get("AGENT_MODEL", "").strip()
+    if provider == "groq" and groq_key and (override or groq_offers(groq_key, GROQ_MODEL)):
+        model_name = override or GROQ_MODEL
         if not model_name.startswith("groq/"):
             model_name = "groq/" + model_name
         print(f"[MODEL] provider=groq  model={model_name}")
         return RateLimitRetryModel(model_id=model_name, api_key=groq_key, temperature=0.0)
-    print(f"[MODEL] provider=ollama  model=ollama_chat/llama3.2  "
-          f"(AGENT_PROVIDER={provider!r}, GROQ_API_KEY={'set' if groq_key else 'NOT set'}; "
-          f"to use Groq you must EXPORT both: export AGENT_PROVIDER=groq; export GROQ_API_KEY=...)")
+    if provider == "groq" and groq_key:
+        print(f"[MODEL] Groq no longer offers {GROQ_MODEL} - using the local model instead.")
+    else:
+        print(f"[MODEL] (AGENT_PROVIDER={provider!r}, GROQ_API_KEY={'set' if groq_key else 'NOT set'}; "
+              f"to use Groq you must EXPORT both: export AGENT_PROVIDER=groq; export GROQ_API_KEY=...)")
+    print("[MODEL] provider=ollama  model=ollama_chat/llama3.2")
     return RateLimitRetryModel(
         model_id="ollama_chat/llama3.2",
         api_base="http://localhost:11434",

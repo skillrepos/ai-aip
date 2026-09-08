@@ -7,8 +7,7 @@ A robust FastMCP server that provides weather and geocoding services via HTTP.
 Tools Provided
 --------------
 1. get_weather(lat, lon) → dict with temperature_c, WMO code, conditions
-2. convert_c_to_f(c) → float (temperature in °F)
-3. geocode_location(name) → dict with latitude, longitude, location name
+2. geocode_location(name) → dict with latitude, longitude, location name
 
 Key Features
 ------------
@@ -157,14 +156,6 @@ def get_weather(lat: float, lon: float) -> dict:
     return {
         "error": f"Weather service failed after {MAX_RETRIES} attempts (last error: {last_error}). Please try again later."
     }
-
-
-# ─── Temperature Conversion Tool ─────────────────────────────────────
-
-@mcp.tool
-def convert_c_to_f(c: float) -> float:
-    """Simple Celsius → Fahrenheit conversion."""
-    return c * 9 / 5 + 32
 
 
 # ─── Geocoding Tool ──────────────────────────────────────────────────

@@ -81,7 +81,7 @@ To confirm the key works and that the lab models are reachable, run:
 bash scripts/check-groq.sh
 ```
 
-You should see `OK` for both models. If a model ever reports `FAIL` because Groq has retired it, the script lists the models your key *can* reach - pick one and `export AGENT_MODEL=<model-id>` before running the lab.
+You should see `OK` for Lab 3 and Lab 4. If either reports `FAIL` because Groq has retired that model, the script checks a replacement for you and prints the exact `export AGENT_MODEL=...` line to run - or tells you to `unset AGENT_PROVIDER` and use the local model if nothing hosted is available.
 
 ![Checking the Groq setup](./images/aip72.png?raw=true "Checking the Groq setup")
 

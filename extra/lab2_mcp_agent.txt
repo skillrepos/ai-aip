@@ -11,12 +11,9 @@ tools to call and when to stop. This demonstrates:
 * **LLM-Driven Control Flow**: Agent loop runs until LLM says "DONE"
 * **Dynamic Tool Selection**: LLM chooses which MCP tool to invoke each step
 * **TAO Protocol**: Full thought/action/observation trace with real agent behavior
-* **Provenance Check**: a number the LLM passes to a tool must have come from
-  an earlier observation (or the question) - it cannot type coordinates from
-  memory. Hallucinated arguments are rejected and the LLM is told to look them up.
 
 Example Flow:
-geocode → get_weather → convert_c_to_f → DONE
+geocode_location → get_weather → DONE
 
 Prerequisites: FastMCP weather server must be running on localhost:8000
 """
@@ -73,13 +70,6 @@ Do NOT add extra text. Do NOT explain after your three lines.
 # Regex patterns for parsing LLM responses
 ACTION_RE = re.compile(r"Action:\s*(\w+)", re.IGNORECASE)
 ARGS_RE = re.compile(r"Args:\s*(\{.*?\})(?:\s|$)", re.S | re.IGNORECASE)
-NUMBER_RE = re.compile(r"-?\d+(?:\.\d+)?")
-
-
-def numbers_in(text: str) -> set[float]:
-    """Every number that appears in a piece of text (question or observation)."""
-    return {float(n) for n in NUMBER_RE.findall(text)}
-
 # ╔══════════════════════════════════════════════════════════════════╗
 # ║ 2.  Turn DISCOVERED MCP tools into prompt text                   ║
 # ╚══════════════════════════════════════════════════════════════════╝
@@ -124,10 +114,9 @@ def _needs_lookup(tool) -> list[str]:
 def format_tool_examples(tools) -> str:
     """Build one worked Thought/Action/Args example per discovered tool.
 
-    Ordered by what discovery tells us about the arguments: tools that take only
-    text (a place name from the question) come first, tools that take numbers
-    come after, because those numbers must come from an earlier Observation.
-    Nothing here names a specific tool - the order falls out of the schemas.
+    Tools whose arguments are all text come first; tools that take numbers come
+    after, because those numbers have to come from an earlier Observation. The
+    order is derived from the schemas, so no tool is named here.
     """
     examples = []
     for tool in sorted(tools, key=lambda t: bool(_needs_lookup(t))):
@@ -177,7 +166,7 @@ def unwrap(obj):
     return obj
 
 # ╔══════════════════════════════════════════════════════════════════╗
-# ║ 4.  LLM-based city extractor (unchanged)                         ║
+# ║ 4.  LLM-based city extractor                                     ║
 # ╚══════════════════════════════════════════════════════════════════╝
 # Uses a separate LLM call to extract city names from natural language.
 # This handles inputs like "What's the weather in Paris?" → "Paris"
@@ -219,11 +208,7 @@ async def run_dynamic(city: str, question: str, max_steps: int = 10) -> None:
 
         messages = [
             {"role": "system", "content": build_system_prompt(tools)},
-            {"role": "user", "content": (
-                f"{question}\n\n"
-                f'The place named is "{city}". You do NOT know its coordinates or '
-                "any other numbers - every number you pass to a tool must be "
-                "copied from an Observation.")},
+            {"role": "user", "content": question},
         ]
 
         print("\n" + "="*60)
@@ -234,10 +219,6 @@ async def run_dynamic(city: str, question: str, max_steps: int = 10) -> None:
         # Deliberately NOT a fixed set of weather fields - the agent does not
         # know in advance which tools the server will advertise.
         gathered = []
-
-        # Every number the agent has legitimately SEEN so far - from the question
-        # or from an observation. Used by the provenance check below.
-        seen_numbers = numbers_in(question)
 
         for step in range(1, max_steps + 1):
             print(f"[Step {step}]")
@@ -285,9 +266,8 @@ async def run_dynamic(city: str, question: str, max_steps: int = 10) -> None:
                     "the tools returned that helps answer it - for a weather question "
                     "that means the conditions AND the temperature, not just one of "
                     "them. Use ONLY the numbers and words shown above, copied exactly - "
-                    "never calculate or convert anything yourself. Ignore any field "
-                    "named code. A field name ending in _c is degrees Celsius; a "
-                    "convert_c_to_f result is degrees Fahrenheit.").content.strip()
+                    "never calculate anything yourself. Ignore any field named code. "
+                    "A field name ending in _c is degrees Celsius.").content.strip()
 
                 print("\nFinal Answer:")
                 print(f"  {answer}")
@@ -314,26 +294,6 @@ async def run_dynamic(city: str, question: str, max_steps: int = 10) -> None:
             except json.JSONDecodeError as e:
                 print(f"\n❌ Error: Invalid JSON in Args: {e}")
                 return
-
-            # ---- PROVENANCE CHECK: numbers must come from observations ----
-            # A small model "knows" roughly where New York is and will happily
-            # type the coordinates itself instead of calling the geocoding tool.
-            # That is a hallucinated argument: it came from the model's memory,
-            # not from a tool. Only numbers that appeared in an earlier
-            # observation (or in the question) are allowed through.
-            invented = {k: v for k, v in args.items()
-                        if isinstance(v, (int, float)) and not isinstance(v, bool)
-                        and float(v) not in seen_numbers}
-            if invented:
-                print(f"\n⚠️  Rejected {action}: the value(s) {json.dumps(invented)} "
-                      f"did not come from any tool result - the model made them up.")
-                messages.append({"role": "assistant", "content": response})
-                messages.append({"role": "user", "content":
-                                 f"Observation: REJECTED. The value(s) {json.dumps(invented)} "
-                                 f"did not come from any tool result. Never type a number from "
-                                 f"memory. First call the tool that produces it, then copy the "
-                                 f"number from that Observation exactly."})
-                continue
 
             # Dynamically call the tool the LLM selected
             print(f"\n→ Calling MCP tool: {action}({json.dumps(args)})")
@@ -364,7 +324,6 @@ async def run_dynamic(city: str, question: str, max_steps: int = 10) -> None:
             observation = f"Observation: {json.dumps(result) if isinstance(result, dict) else result}"
             print(observation)
             print()
-            seen_numbers |= numbers_in(observation)
 
             # Add to conversation history
             messages.append({"role": "assistant", "content": response})
