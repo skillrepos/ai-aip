@@ -111,11 +111,31 @@ python agent1.py
 
 <br><br>
 
-9. Now try *Sydney, Australia* and compare the result against the forecast on the web. Why doesn't it match? How would you fix it? (Clue: latitudes and longitudes in the Southern or Western hemisphere need negative values.) The tool API also rate-limits, so an occasional retry message is normal.
+**Steps 9-11 are optional if you have time and want to try them.**
+
+9. Now try putting in a name that isn't a real place - for example *Island of Narnia*. The model will likely try to guess/hallucinate coordinates on its own and follow up by fetching weather for the unreal coordinates and return fake weather.
+
+![Fake place](./images/aip74.png?raw=true "Fake place") 
 
 <br><br>
 
-10.  When you're done, enter "exit".
+10. Let's fix this by merging in an updated version that calls the same open-meteo API to get the coordinates for a location. Type `exit` to quit the running instance. Then use the same diff and merge technique as before to merge in the updates with the command below. Close the tab to save your changes when done. (When you are merging, notice not only the additional tool, but also the changes in the system prompt including the CRITICAL RULES area.)
+
+```
+code -d ../extra/lab1-code-v2.txt agent1.py
+```
+
+![Merge fixes](./images/aa91.png?raw=true "Merge fixes")
+
+<br><br>
+
+11.  Now, run the agent again and put in a fake location. This time, the agent should call geocode_location first, see an error come back in the observation, skip the get_weather call entirely, and produce a Final: answer telling you the location couldn't be found. When done running the agent, just enter "exit".
+
+![Fake place rerun](./images/aip75.png?raw=true "Fake place rerun")
+
+<br><br>
+
+12. Type `exit` to quit the agent run.
 
 <p align="center">
 **[END OF LAB]**
