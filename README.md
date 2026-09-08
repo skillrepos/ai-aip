@@ -32,10 +32,10 @@ After the initial startup, it will run a script to setup the python environment,
 
 ![Final prep](./images/aip2.png?raw=true "Final prep")
 
-If VS Code shows a workspace trust prompt, click *Trust*.
+If VS Code shows a workspace trust prompt, click *Trust Folder and Continue*.
 
 The codespace may open in Restricted Mode with a banner asking whether you trust the authors
-of the files. Click **Trust** (or *Yes, I trust the authors*). 
+of the files. Click **Trust Folder and Continue**. 
 
 ![Trust workspace](./images/ollama48.png?raw=true "Trust workspace")
 
