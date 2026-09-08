@@ -28,16 +28,17 @@ Click here ➡️  [![Open in GitHub Codespaces](https://github.com/codespaces/b
 
 This will run for several minutes while it gets everything ready.
 
+If VS Code shows a workspace trust prompt, click *Trust Folder & Continue*.
+
+The codespace may open in Restricted Mode with a banner asking whether you trust the authors
+of the files. Click **Trust Folder & Continue**. 
+
+![Trust workspace](./images/ollama48.png?raw=true "Trust workspace")
+
 After the initial startup, it will run a script to setup the python environment, install needed python pieces, install Ollama, and then download the models we will use. This will take several more minutes to run. It will look like this while this is running.
 
 ![Final prep](./images/aip2.png?raw=true "Final prep")
 
-If VS Code shows a workspace trust prompt, click *Trust Folder and Continue*.
-
-The codespace may open in Restricted Mode with a banner asking whether you trust the authors
-of the files. Click **Trust Folder and Continue**. 
-
-![Trust workspace](./images/ollama48.png?raw=true "Trust workspace")
 
 The codespace is ready to use when you see a prompt like the one shown below in its terminal.
 
