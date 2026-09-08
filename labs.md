@@ -1,7 +1,7 @@
 # Implementing AI Agents in Python
 ## Using frameworks, MCP, and RAG for agentic AI
 ## Session labs 
-## Revision 1.43 - 09/08/26
+## Revision 1.44 - 09/08/26
 
 **Follow the startup instructions in the README.md file IF NOT ALREADY DONE!**
 
@@ -283,7 +283,9 @@ python ../scripts/discover_tools.py
 python mcp_agent_v2.py
 ```
 
-The discovery script now lists **three** tools and the agent reports `Discovered 3 tool(s)`. Ask it something only the new tool can answer:
+<br><br>
+
+11. The discovery script now lists **three** tools and the agent reports `Discovered 3 tool(s)`. Ask it something only the new tool can answer:
 
 ```
 What is tomorrow's forecast for New York?
@@ -294,6 +296,10 @@ It calls `get_forecast` - a tool that did not exist the last time you ran this a
 ![Agent discovering and calling the new tool](./images/aip71.png?raw=true "Agent discovering and calling the new tool")
 
 ![The answer built from the new tool's results](./images/aip70.png?raw=true "The answer built from the new tool's results")
+
+<br><br>
+
+12. Stop the client by typing `exit`. And stop the server via `Ctrl+c`.
     
 <p align="center">
 **[END OF LAB]**
