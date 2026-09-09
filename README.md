@@ -105,7 +105,7 @@ python scripts/warmup.py --embed --keep-alive 300m --auto-pull &
 After this runs, you'll see a **READY FOR WORKSHOP!** message. You can just hit `Enter` to get back to a prompt.
 (If you happen to hit an error where the script gets interrupted, just run it again.)
 
-![Run warmup script](./images/aip22.png?raw=true "Run warmup script")
+![Run warmup script](./images/aip80.png?raw=true "Run warmup script")
 
 <br><br>
 
