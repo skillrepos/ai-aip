@@ -1,7 +1,7 @@
 # Implementing AI Agents in Python
 ## Using frameworks, MCP, and RAG for agentic AI
 ## Session labs 
-## Revision 1.49 - 09/09/26
+## Revision 1.50 - 09/09/26
 
 **Follow the startup instructions in the README.md file IF NOT ALREADY DONE!**
 
@@ -172,7 +172,7 @@ code -d ../extra/lab2_mcp_server.txt mcp_server_v2.py
 
 As you merge, notice FastMCP's *@mcp.tool* decorators marking functions as MCP tools, and the *streamable-http* transport. Close the tab when done to save.
 
-![MCP server code](./images/aip19.png?raw=true "MCP server code") 
+![MCP server code](./images/aip81.png?raw=true "MCP server code") 
 
 <br><br>
 
