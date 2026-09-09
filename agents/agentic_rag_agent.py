@@ -2,9 +2,6 @@
 """
 Lab 4 - Agentic RAG (model-driven, via native tool-calling)
 
-The MODEL drives the loop: using native tool-calling it decides which tools to
-call, retrieves as needed, grounds office names to real cities, and a self-check
-gate verifies the answer is grounded before finishing.
 
 You build this file with the diff/merge step. FOUR sections are merged in, each
 marked with a ">>>>> MERGE SECTION N" banner:
@@ -69,21 +66,75 @@ def haversine_miles(lat1, lon1, lat2, lon2):
     return R * 2 * math.atan2(math.sqrt(h), math.sqrt(1 - h))
 
 
-# >>>>> MERGE SECTION 1: tools the agent can call (+ grounding helper) >>>>>
-# TODO (merge): search_documents, ground_office, distance_to, city_facts, and DISPATCH
-DISPATCH = {}
+
+def search_documents(args, state):
+    query = args.get("query", "")
+    snippets = collection.query(query_texts=[query], n_results=3)["documents"][0]
+    for s in snippets:
+        if s not in state["retrieved"]:
+            state["retrieved"].append(s)
+    print(f"    [RAG] retrieved {len(snippets)} snippet(s) for {query!r}")
+    return {"query": query, "snippets": snippets}
+
+
+def ground_office(place, state):
+    snippets = collection.query(query_texts=[place], n_results=3)["documents"][0]
+    for s in snippets:
+        if s not in state["retrieved"]:
+            state["retrieved"].append(s)
+    skip = {"office", "the", "of", "to", "me", "location", "city"}
+    words = [w for w in re.findall(r"[a-z]+", place.lower()) if w not in skip and len(w) >= 2]
+    for s in snippets:
+        if any(w in s.lower() for w in words) and "," in s:
+            office, city = s.split(",")[0].strip(), s.split(",")[1].strip()
+            print(f"    [GROUND] {place!r} -> {office!r} in {city!r}")
+            return {"status": "ok", "office": office, "city": city}
+    available = [s.split(",")[0].strip() for s in snippets if "," in s]
+    print(f"    [GROUND] {place!r} -> NOT FOUND")
+    return {"status": "not_found", "available_offices": available}
+
+
+def distance_to(args, state):
+    place = args.get("destination") or args.get("city") or args.get("office") or ""
+    g = ground_office(place, state)
+    if g["status"] == "not_found":
+        return {"error": f"no office matching {place!r}", "available_offices": g["available_offices"]}
+    lat, lon = geocode(g["city"])
+    if lat is None:
+        return {"error": f"could not geocode {g['city']}"}
+    miles = round(haversine_miles(state["start"]["lat"], state["start"]["lon"], lat, lon), 2)
+    return {"office": g["office"], "city": g["city"], "distance_miles": miles, "from": state["start"]["city"]}
+
+
+def city_facts(args, state):
+    g = ground_office(args.get("city") or args.get("office") or "", state)
+    if g["status"] == "not_found":
+        return {"error": "no such office", "available_offices": g["available_offices"]}
+    facts = [line.lstrip("- ").strip() for line in out.splitlines() if line.strip().startswith("-")][:3]
+    return {"city": g["city"], "facts": facts}
+
+
+DISPATCH = {"search_documents": search_documents, "distance_to": distance_to, "city_facts": city_facts}
 # >>>>> END MERGE SECTION 1 >>>>>
 
 
-# >>>>> MERGE SECTION 2: tool schemas (enable native tool-calling) + system prompt >>>>>
-# TODO (merge): TOOLS_SCHEMA (the JSON function schemas) and SYSTEM (the prompt)
-TOOLS_SCHEMA = []
-SYSTEM = "TODO (merge)"
+TOOLS_SCHEMA = [
+    {"type": "function", "function": {"name": "search_documents",
+        "description": "Retrieve office-document snippets. Call first; call again with a better query if needed.",
+        "parameters": {"type": "object", "properties": {"query": {"type": "string"}}, "required": ["query"]}}},
+    {"type": "function", "function": {"name": "distance_to",
+        "description": "Miles from the user's starting location to an office/city.",
+        "parameters": {"type": "object", "properties": {"destination": {"type": "string"}}, "required": ["destination"]}}},
+    {"type": "function", "function": {"name": "city_facts",
+        "description": "Three interesting facts about a city.",
+        "parameters": {"type": "object", "properties": {"city": {"type": "string"}}, "required": ["city"]}}},
+]
+
+SYSTEM = (
 # >>>>> END MERGE SECTION 2 >>>>>
 
 
 # >>>>> MERGE SECTION 3: self-check gate >>>>>
-# TODO (merge): return {"complete": bool, "missing": str} from a simple check
 def validate_answer(answer, state):
     return {"complete": True, "missing": ""}
 # >>>>> END MERGE SECTION 3 >>>>>
@@ -92,7 +143,32 @@ def validate_answer(answer, state):
 # >>>>> MERGE SECTION 4: the agent loop (the MODEL drives it) >>>>>
 # TODO (merge): run_agent - the model decides each step (call tools, or final answer)
 def run_agent(user_query, start, max_steps=8):
-    pass
+    state = {"start": start, "retrieved": []}
+    messages = [{"role": "system", "content": SYSTEM},
+                {"role": "user", "content": f"My starting location is {start['city']}. {user_query}"}]
+        resp = client.chat.completions.create(
+            model=MODEL, messages=messages, tools=TOOLS_SCHEMA, tool_choice="auto", temperature=0)
+        message = resp.choices[0].message
+
+        # The model chose to call one or more tools: run each, feed the results back,
+        # and loop so the model can decide what to do next.
+        if getattr(message, "tool_calls", None):
+            messages.append({"role": "assistant", "content": message.content or "", "tool_calls": [
+                {"id": tc.id, "type": "function",
+                 "function": {"name": tc.function.name, "arguments": tc.function.arguments}} for tc in message.tool_calls]})
+            continue
+
+        # No tool call -> the model gave its final answer
+        answer = message.content or ""
+        verdict = validate_answer(answer, state)
+        print(f"    [SELF-CHECK] complete={verdict['complete']} {verdict['missing']}")
+        if verdict["complete"]:
+            print("\n" + "=" * 60 + f"\nFINAL ANSWER:\n{answer}\n" + "=" * 60)
+            return
+        messages += [{"role": "assistant", "content": answer},
+                     {"role": "user", "content": f"Missing: {verdict['missing']}. Use the tools, then answer."}]
+        continue
+    print("[AGENT] reached max steps without a final answer.")
 # >>>>> END MERGE SECTION 4 >>>>>
 
 
