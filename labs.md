@@ -1,7 +1,7 @@
 # Implementing AI Agents in Python
 ## Using frameworks, MCP, and RAG for agentic AI
 ## Session labs 
-## Revision 1.43 - 09/08/26
+## Revision 1.47 - 09/08/26
 
 **Follow the startup instructions in the README.md file IF NOT ALREADY DONE!**
 
@@ -111,11 +111,31 @@ python agent1.py
 
 <br><br>
 
-9. Now try *Sydney, Australia* and compare the result against the forecast on the web. Why doesn't it match? How would you fix it? (Clue: latitudes and longitudes in the Southern or Western hemisphere need negative values.) The tool API also rate-limits, so an occasional retry message is normal.
+**Steps 9-11 are optional if you have time and want to try them.**
+
+9. Now try putting in a name that isn't a real place - for example *Island of Narnia*. The model will likely try to guess/hallucinate coordinates on its own and follow up by fetching weather for the unreal coordinates and return fake weather.
+
+![Fake place](./images/aip74.png?raw=true "Fake place") 
 
 <br><br>
 
-10.  When you're done, enter "exit".
+10. Let's fix this by merging in an updated version that calls the same open-meteo API to get the coordinates for a location. Type `exit` to quit the running instance. Then use the same diff and merge technique as before to merge in the updates with the command below. Close the tab to save your changes when done. (When you are merging, notice not only the additional tool, but also the changes in the system prompt including the CRITICAL RULES area.)
+
+```
+code -d ../extra/lab1-code-v2.txt agent1.py
+```
+
+![Merge fixes](./images/aa91.png?raw=true "Merge fixes")
+
+<br><br>
+
+11.  Now, run the agent again and put in a fake location. This time, the agent should call geocode_location first, see an error come back in the observation, skip the get_weather call entirely, and produce a Final: answer telling you the location couldn't be found. When done running the agent, just enter "exit".
+
+![Fake place rerun](./images/aip75.png?raw=true "Fake place rerun")
+
+<br><br>
+
+12. Type `exit` to quit the agent run.
 
 <p align="center">
 **[END OF LAB]**
@@ -263,7 +283,9 @@ python ../scripts/discover_tools.py
 python mcp_agent_v2.py
 ```
 
-The discovery script now lists **three** tools and the agent reports `Discovered 3 tool(s)`. Ask it something only the new tool can answer:
+<br><br>
+
+11. The discovery script now lists **three** tools and the agent reports `Discovered 3 tool(s)`. Ask it something only the new tool can answer:
 
 ```
 What is tomorrow's forecast for New York?
@@ -274,6 +296,10 @@ It calls `get_forecast` - a tool that did not exist the last time you ran this a
 ![Agent discovering and calling the new tool](./images/aip71.png?raw=true "Agent discovering and calling the new tool")
 
 ![The answer built from the new tool's results](./images/aip70.png?raw=true "The answer built from the new tool's results")
+
+<br><br>
+
+12. Stop the client by typing `exit`. And stop the server via `Ctrl+c`.
     
 <p align="center">
 **[END OF LAB]**
@@ -307,6 +333,8 @@ echo "provider=$AGENT_PROVIDER  key=$([ -n "$GROQ_API_KEY" ] && echo set || echo
 ```
 
 You should see `provider=groq  key=set`. A CodeAgent re-sends the whole conversation each step, so this lab does hit the free-tier limit and pause part-way through - that's expected. (Without Groq it still runs, on the slower local `llama3.2`.)
+
+NOTE: If you see `provider= key=set` try the command in a new terminal to make sure the provider value is set.
 
 <br><br>
 
@@ -367,6 +395,13 @@ Convert 100 USD to EUR
 
 8. Now try partial inputs - the agent fills in the missing pieces from memory. Look for the line with "Final answer" in it.
 
+> NOTE: You may see warnings like the following if the remote's tokens-per-minute cap is reached. The code will wait and retry. It may do this more than once, but should eventually complete the task.
+>
+> ![Capacity warnings](./images/aip76.png?raw=true "Capacity warnings") 
+>
+
+<br><br>
+
 ```
 Convert 400 to JPY
 Convert 200
@@ -425,17 +460,25 @@ convert 300
 
 ### Steps
 
-1. **Groq is required for this lab.** Confirm it's active in this terminal:
+1. For this lab, we have a data file that we'll be using that contains a list of office information and details for a ficticious company. The file is in [**data/offices.pdf**](./data/offices.pdf). You can use the link to open it and take a look at it.
 
-```
-echo "provider=$AGENT_PROVIDER  key=$([ -n "$GROQ_API_KEY" ] && echo set || echo MISSING)"
-```
-
-You should see `provider=groq  key=set`. If not, redo the *One-time Groq setup* at the top of this document. (If you can't use Groq at all, see the *Offline fallback* note at the end of this lab.)
+![PDF data file](./images/aip79.png?raw=true "PDF data file") 
 
 <br><br>
 
-2. Build the agent with the diff/merge facility:
+2. The agent builds a vector database from that file. That means it splits it into "chunks" of text, then encodes each chunk and stores it as a vector of numbers in a `ChromaDB` vector database. Our prompts are turned into vectors and compared against the stored vectors to find the best mathematical matches. You can see the part of the code that does this in `agentic_rag_agent.py, lines 117-127 if interested.
+
+```
+code agentic_rag_agent.py
+```
+
+![code to populate database](./images/aip78.png?raw=true "code to populate database") 
+
+When done looking at the code, you can close that tab.
+
+<br><br>
+
+3. Build the agent that uses RAG with the diff/merge facility:
 
 ```
 code -d ../extra/agentic_rag_agent.txt agentic_rag_agent.py
@@ -453,7 +496,7 @@ Merge the **four sections** in turn - each carries a `>>>>> MERGE SECTION N` ban
 
 <br><br>
 
-3. Run the agent. It asks whether to change your starting location - answer `n` to keep the default.
+4. Run the agent. It asks whether to change your starting location. You can just answer `n` to keep the default.  (The starting location is just a value to use for distance calculations later.)
 
 ```
 python agentic_rag_agent.py
@@ -466,7 +509,7 @@ The `[AGENT] provider=groq` line at the top confirms it's on the hosted model.
 
 <br><br>
 
-4. **Watch the agent work.** Ask:
+5. Watch the agent work. Ask:
 
 ```
 Tell me about HQ
@@ -485,23 +528,13 @@ The tagged debug lines show it thinking:
 
 <br><br>
 
-5. **Decomposition + grounding.** Ask:
-
-```
-How far am I from HQ and from the Denver office?
-```
-
-There is no "Denver office" in the data. The agent splits the question in two, then calls `distance_to` **only** for HQ - where the `[GROUND]` line resolves the name to a real address before any mileage is computed. You get a real distance for the office that exists and a plain statement that the other is not in the documents. It never invents a Denver mileage.
-
-<br><br>
-
-6. **Grounding is more than "don't make things up."** Ask:
+6. Let's see how the RAG data helps ground the agent. Ask:
 
 ```
 Tell me about the Eastern office
 ```
 
-There *is* a **Northeast** office in the data, and it comes back as the top retrieved snippet - the tempting substitution is handed to the model on a plate. It still reports that the Eastern office is not listed. One line in the system prompt is what stops it:
+There *is not* an **Eastern* office. But there *is* a **Northeast** office in the data, and it comes back as the top retrieved snippet. Notice though that, thanks to being grounded in the data from the PDF, the agent still reports correctly that the Eastern office is not listed. One line in the system prompt is what stops it:
 
 ```
 Never substitute a similarly named office for the one the user asked about - if the exact
@@ -512,13 +545,13 @@ office the user named is not in the documents, say that, even if a close name ex
 
 <br><br>
 
-7. **A two-office comparison.** Ask:
+7. Now, let's do a two-office comparison to show the agent has to utilize decision-making with the RAG data. Ask:
 
 ```
 Which is closer to me, HQ or the Midwest office?
 ```
 
-The model plans this on its own: two `distance_to` calls, each with its own `[GROUND]` resolution, then an answer comparing them (about 423 miles to HQ versus 641 to the Midwest office). Nothing in the code told it to make two calls or how to combine them.
+The model plans this on its own: two `distance_to` calls, each with its own `[GROUND]` resolution, then an answer comparing them (about 423 miles to HQ versus 641 to the Midwest office if you didn't change the starting location). Nothing in the code told it to make two calls or how to combine them.
 
 Notice the division of labour - it is what makes an agent like this trustworthy. The `[observation]` lines are hard data from our code: retrieval, grounding, geocoding and the distance math all live in deterministic tools. The model contributes only the part that needs judgement.
 

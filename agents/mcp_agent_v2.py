@@ -63,7 +63,7 @@ def unwrap(obj):
     return obj
 
 # ╔══════════════════════════════════════════════════════════════════╗
-# ║ 4.  LLM-based city extractor (unchanged)                         ║
+# ║ 4.  LLM-based city extractor                                     ║
 # ╚══════════════════════════════════════════════════════════════════╝
 # Uses a separate LLM call to extract city names from natural language.
 # This handles inputs like "What's the weather in Paris?" → "Paris"
