@@ -1,7 +1,7 @@
 # Implementing AI Agents in Python
 ## Using frameworks, MCP, and RAG for agentic AI
 ## Session labs 
-## Revision 1.54 - 09/09/26
+## Revision 1.55 - 09/09/26
 
 **Follow the startup instructions in the README.md file IF NOT ALREADY DONE!**
 
@@ -611,7 +611,7 @@ code agent5.py
 
 <br><br>
 
-5. Replace the single *booking agent* definition with the three definitions below, keeping the indenting. (The screenshots after the gray box show before and after - they are not what you copy.)
+5. Replace the single *booking agent* definition with the three definitions below, keeping the indenting. (The gray box immediately below contains the code to copy and paste to replace the single agent definition. The screenshots *after* the gray box show before and after - they are not what you copy.)
 
 ```
 # Defines the AI agents
@@ -674,7 +674,7 @@ agents=[booking_agent, customer_service_agent, travel_agent],
 
 <br><br>
 
-8. Now you can save your changes and then run the program again.
+8. Now you can **save your changes** (Cmd+S or Ctrl+S) and then run the program again.
 
 ```
 python agent5.py
