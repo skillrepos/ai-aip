@@ -9,6 +9,11 @@ import requests
 from unittest.mock import Mock, patch, MagicMock
 from smolagents import ToolCallingAgent, LiteLLMModel, tool
 
+import warnings
+# LiteLLM's response objects do not line up with the newer pydantic serializer, which
+# prints a long harmless warning on every model call. Keep it out of the lab output.
+warnings.filterwarnings("ignore", message="Pydantic serializer warnings")
+
 
 def build_test_model():
     provider = os.environ.get("LAB7_PROVIDER", "").strip().lower()

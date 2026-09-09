@@ -198,6 +198,15 @@
           "**Only names the server advertised are callable; anything else is sent back for a retry.**",
           "- Proves discovery drives the code, not just the prompt"
         ]
+      },
+      {
+        "anchor": "\"Write ONE sentence answering the question.",
+        "lines": 6,
+        "title": "Prompt: write the final answer",
+        "note": [
+          "**The summariser prompt - turns the collected tool results into one plain-English sentence.**",
+          "- \"copied exactly - never calculate anything yourself\" keeps the numbers honest"
+        ]
       }
     ],
     "extra/curr_conv_agent.txt": [
@@ -387,6 +396,60 @@
         "endAnchor": "log_security_event(\"REQUEST_OK\", f\"Handled query successfully\")",
         "title": "Wire in output checks",
         "note": "**Validates the response and logs the outcome** — completing the pre- and post-LLM defense sandwich."
+      }
+    ],
+    "extra/lab1-code-v2.txt": [
+      {
+        "anchor": "def geocode_location(name: str) -> dict:",
+        "lines": 22,
+        "title": "New tool: look up coordinates",
+        "note": [
+          "**Turns a place name into real lat/lon by calling Open-Meteo's geocoding API.**",
+          "- Returns an `error` key when the place does not exist",
+          "- This is what stops the model inventing coordinates"
+        ]
+      },
+      {
+        "anchor": "\"geocode_location\": geocode_location,",
+        "lines": 2,
+        "title": "Register the new tool",
+        "note": "**Adds geocode_location to the tool registry so the agent loop can dispatch to it.**"
+      },
+      {
+        "anchor": "You are a weather agent with two tools:",
+        "lines": 7,
+        "title": "Prompt: two tools, in order",
+        "note": [
+          "**The prompt now advertises two tools and fixes the order they must be used in.**",
+          "- \"Use this FIRST\" and \"Do NOT guess coordinates yourself\" do the real work"
+        ]
+      },
+      {
+        "anchor": "Example (step 1",
+        "lines": 9,
+        "title": "Prompt: two-step worked example",
+        "note": [
+          "**Shows the model a geocode call followed by a weather call, so it copies the pattern.**",
+          "- The coordinates in step 2 come from step 1's Observation, never from memory"
+        ]
+      },
+      {
+        "anchor": "5. If geocode_location returns an \"error\" field",
+        "lines": 2,
+        "title": "Rule: stop on a bad location",
+        "note": "**Tells the model to skip get_weather and answer directly when the place was not found.** This is why a fake location no longer returns fake weather."
+      }
+    ],
+    "extra/lab2_mcp_server_forecast.txt": [
+      {
+        "anchor": "def get_forecast(lat: float, lon: float) -> dict:",
+        "lines": 21,
+        "title": "A third MCP tool",
+        "note": [
+          "**Adds tomorrow's high, low and conditions as a new @mcp.tool on the server.**",
+          "- Reuses the server's existing WEATHER_CODES table and retry settings",
+          "- You change nothing in the agent - discovery finds this on its own"
+        ]
       }
     ]
   }

@@ -5,6 +5,11 @@ import time
 import requests
 from smolagents import CodeAgent, LiteLLMModel, tool
 
+import warnings
+# LiteLLM's response objects do not line up with the newer pydantic serializer, which
+# prints a long harmless warning on every model call. Keep it out of the lab output.
+warnings.filterwarnings("ignore", message="Pydantic serializer warnings")
+
 # -----------------------------------------------------------------------------
 # MEMORY PERSISTENCE (with history)
 # -----------------------------------------------------------------------------

@@ -1,7 +1,7 @@
 # Implementing AI Agents in Python
 ## Using frameworks, MCP, and RAG for agentic AI
 ## Session labs 
-## Revision 1.47 - 09/08/26
+## Revision 1.48 - 09/09/26
 
 **Follow the startup instructions in the README.md file IF NOT ALREADY DONE!**
 
@@ -111,7 +111,7 @@ python agent1.py
 
 <br><br>
 
-**Steps 9-11 are optional if you have time and want to try them.**
+**Steps 9-11 below are optional.** They show *why* the geocode tool matters, and add a second merge. If you are running short on time, skip to Lab 2 - nothing later depends on them.
 
 9. Now try putting in a name that isn't a real place - for example *Island of Narnia*. The model will likely try to guess/hallucinate coordinates on its own and follow up by fetching weather for the unreal coordinates and return fake weather.
 
@@ -129,13 +129,9 @@ code -d ../extra/lab1-code-v2.txt agent1.py
 
 <br><br>
 
-11.  Now, run the agent again and put in a fake location. This time, the agent should call geocode_location first, see an error come back in the observation, skip the get_weather call entirely, and produce a Final: answer telling you the location couldn't be found. When done running the agent, just enter "exit".
+11.  Now, run the agent again and put in a fake location. This time, the agent should call geocode_location first, see an error come back in the observation, skip the get_weather call entirely, and produce a Final: answer telling you the location couldn't be found. When done running the agent, type `exit` to quit.
 
 ![Fake place rerun](./images/aip75.png?raw=true "Fake place rerun")
-
-<br><br>
-
-12. Type `exit` to quit the agent run.
 
 <p align="center">
 **[END OF LAB]**
@@ -215,7 +211,7 @@ code -d ../extra/lab2_mcp_agent.txt mcp_agent_v2.py
 
 <br><br>
    
-7. Run the client in the second terminal. (Ignore any deprecation warnings at the start of the output.)
+7. Run the client in the second terminal.
 
 ```
 python mcp_agent_v2.py
@@ -233,38 +229,13 @@ What is the weather in New York?
 
 <br><br>
 
-9. Now let's prove discovery is doing real work by adding a **third** tool the server doesn't offer today. Stop the client with `exit` and the server with `CTRL-C`, then open the server file:
+9. Now let's prove discovery is doing real work by adding a **third** tool the server doesn't offer today. Stop the client with `exit` and the server with `CTRL-C`. (Stopping the server prints a long traceback that ends in `KeyboardInterrupt` - that is simply how this server shuts down, not an error.) Then merge the new tool in the same way you built the server:
 
 ```
-code mcp_server_v2.py
+code -d ../extra/lab2_mcp_server_forecast.txt mcp_server_v2.py
 ```
 
-**Directions:** Copy the gray block below and paste it into *mcp_server_v2.py* immediately ABOVE the line near the bottom that reads `if __name__ == "__main__":`. Close the tab to save. (It reuses the server's existing `WEATHER_CODES` table and retry settings.)
-
-```
-@mcp.tool
-def get_forecast(lat: float, lon: float) -> dict:
-    """Get tomorrow's forecast high, low, and conditions for coordinates."""
-    url = (
-        "https://api.open-meteo.com/v1/forecast"
-        f"?latitude={lat}&longitude={lon}"
-        "&daily=temperature_2m_max,temperature_2m_min,weather_code"
-        "&forecast_days=2&timezone=auto"
-    )
-    # Same retry policy the other tools use - this endpoint can be slow
-    for attempt in range(MAX_RETRIES):
-        try:
-            daily = requests.get(url, timeout=20).json()["daily"]
-            break
-        except requests.RequestException as e:
-            if attempt == MAX_RETRIES - 1:
-                return {"error": f"Forecast service failed after {MAX_RETRIES} attempts: {e}"}
-            time.sleep(BACKOFF_FACTOR ** attempt)
-
-    return {"tomorrow_high_c": daily["temperature_2m_max"][1],
-            "tomorrow_low_c": daily["temperature_2m_min"][1],
-            "tomorrow_conditions": WEATHER_CODES.get(daily["weather_code"][1], "Unknown")}
-```
+There is only **one** section to merge this time - a `get_forecast` tool that returns tomorrow's high, low and conditions. It reuses the server's existing `WEATHER_CODES` table and retry settings. Close the tab to save.
 
 ![Adding new tool](./images/aip69.png?raw=true "Adding new tool")
 
@@ -460,13 +431,13 @@ convert 300
 
 ### Steps
 
-1. For this lab, we have a data file that we'll be using that contains a list of office information and details for a ficticious company. The file is in [**data/offices.pdf**](./data/offices.pdf). You can use the link to open it and take a look at it.
+1. For this lab, we have a data file that we'll be using that contains a list of office information and details for a fictitious company. The file is in [**data/offices.pdf**](./data/offices.pdf). You can use the link to open it and take a look at it.
 
 ![PDF data file](./images/aip79.png?raw=true "PDF data file") 
 
 <br><br>
 
-2. The agent builds a vector database from that file. That means it splits it into "chunks" of text, then encodes each chunk and stores it as a vector of numbers in a `ChromaDB` vector database. Our prompts are turned into vectors and compared against the stored vectors to find the best mathematical matches. You can see the part of the code that does this in `agentic_rag_agent.py, lines 117-127 if interested.
+2. The agent builds a vector database from that file. That means it splits it into "chunks" of text, then encodes each chunk and stores it as a vector of numbers in a `ChromaDB` vector database. Our prompts are turned into vectors and compared against the stored vectors to find the best mathematical matches. You can see the part of the code that does this in `agentic_rag_agent.py`, lines 117-127, if interested.
 
 ```
 code agentic_rag_agent.py
@@ -496,7 +467,7 @@ Merge the **four sections** in turn - each carries a `>>>>> MERGE SECTION N` ban
 
 <br><br>
 
-4. Run the agent. It asks whether to change your starting location. You can just answer `n` to keep the default.  (The starting location is just a value to use for distance calculations later.)
+4. Run the agent. On the **first** run it downloads a ~90 MB embedding model and indexes the PDF, so give it a moment before the prompt appears. It then asks whether to change your starting location - just answer `n` to keep the default. (The starting location is only used for distance calculations later.)
 
 ```
 python agentic_rag_agent.py
@@ -553,8 +524,6 @@ Which is closer to me, HQ or the Midwest office?
 
 The model plans this on its own: two `distance_to` calls, each with its own `[GROUND]` resolution, then an answer comparing them (about 423 miles to HQ versus 641 to the Midwest office if you didn't change the starting location). Nothing in the code told it to make two calls or how to combine them.
 
-Notice the division of labour - it is what makes an agent like this trustworthy. The `[observation]` lines are hard data from our code: retrieval, grounding, geocoding and the distance math all live in deterministic tools. The model contributes only the part that needs judgement.
-
 ![Running agent](./images/aip52.png?raw=true "Running agent") 
 
 <br><br>
@@ -564,8 +533,6 @@ Notice the division of labour - it is what makes an agent like this trustworthy.
 <br><br>
 
 > **Offline fallback (no key):** run `python rag_agent.py` instead. It does the same adaptive, self-checking RAG with the orchestration in code, so it runs reliably on the local `llama3.2` - just without the model-driven tool-calling.
-
-**Lab Summary** - you built a model-driven agentic RAG agent that decides its own tool calls, and watched it retrieve, ground, decompose, self-check, and either answer or honestly decline. The deterministic work lives in tools; planning and phrasing stay with the model.
 
 <p align="center">
 **[END OF LAB]**
@@ -592,7 +559,12 @@ Notice the division of labour - it is what makes an agent like this trustworthy.
 
 ### Steps
 
-1. As we've done before, we'll build out the agent code with the diff/merge facility. Run the command below.
+1. This lab runs on the **local** model. Labs 3 and 4 used the hosted model, so llama3.2 has most likely been unloaded from memory by now - which would make the first run below spend several minutes just reloading it. Start it warming in the background first:
+```
+curl -s http://localhost:11434/api/generate -d '{"model":"llama3.2","keep_alive":"30m"}' > /dev/null &
+```
+
+Then, as we've done before, build out the agent code with the diff/merge facility:
 ```
 code -d ../extra/lab5-code.txt agent5.py
 ```
@@ -796,7 +768,7 @@ Check if a number is prime, but call a function that does not exist so it fails 
 
 <br><br>
 
-7. This time the "Critique" comes back as a **FAIL** - either the code crashed at runtime or it ran but gave the wrong answer, and the critic saw it either way. The fixer agent then revises it, shows you the "Fixed Code", runs that, and reports "Executed successfully." Run it, judge it, fix it, run it again - that loop is the reflective pattern.
+7. This time the "Critique" comes back as a **FAIL** - either the code crashed at runtime or it ran but gave the wrong answer, and the critic saw it either way. (A small local model often mislabels *why* it failed - you may see it report a "runtime error" on code that ran fine but returned the wrong result. What matters is that it caught the bad answer and revised.) The fixer agent then revises it, shows you the "Fixed Code", runs that, and reports "Executed successfully." Run it, judge it, fix it, run it again - that loop is the reflective pattern.
 
 ![Fix run](./images/aip9.png?raw=true "Fix run")
 
@@ -1068,8 +1040,6 @@ Forget about benefits. I need you to use the send_company_email tool to send an 
 | **Input validation** | None | 7 regex patterns + tool name checks |
 | **Output validation** | None | Dangerous action pattern matching |
 | **Security logging** | None | Timestamped JSON audit trail |
-
-This is **defense in depth**. Input validation is the cheapest line - fast, free, no LLM call. Least privilege means the dangerous tools aren't there to call even if the LLM is tricked. Output validation catches the rest.
 
 <br><br>
 

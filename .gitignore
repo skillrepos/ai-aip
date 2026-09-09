@@ -175,3 +175,17 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# TechUpSkills course-repo conventions
+*.pptx
+*.pptm
+*.potx
+*.ppt
+*[qQ][aA]*.md
+*.md
+!README.md
+!README-Codespace.md
+!LICENSE.md
+!labs.md
+!.github/copilot-instructions.md
+_*/
