@@ -1,7 +1,7 @@
 # Implementing AI Agents in Python
 ## Using frameworks, MCP, and RAG for agentic AI
 ## Session labs 
-## Revision 1.50 - 09/09/26
+## Revision 1.51 - 09/09/26
 
 **Follow the startup instructions in the README.md file IF NOT ALREADY DONE!**
 
@@ -213,7 +213,7 @@ code -d ../extra/lab2_mcp_agent.txt mcp_agent_v2.py
 
 6. Review and merge as before. Watch for four things: the *System Prompt* **template** (the tool list is **not** hardcoded in it), the MCP client connection at the /mcp/ endpoint, the **`list_tools()` discovery call**, and the code that turns the discovered tools into the prompt's tool list. Close the tab to save.
 
-![Agent using MCP client code](./images/aip68.png?raw=true "Agent using MCP client code") 
+![Agent using MCP client code](./images/aip82.png?raw=true "Agent using MCP client code") 
 
 <br><br>
    
