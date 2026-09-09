@@ -796,6 +796,10 @@ python ../extra/reflect_agent_verbose.py
 
 9. (Optional) Try other requests, or edit the system messages in the code and re-run to see how the roles change.
 
+<br><br>
+
+10. Type `exit` to quit when done.
+
 
 <p align="center">
 **[END OF LAB]**
