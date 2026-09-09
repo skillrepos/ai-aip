@@ -25,6 +25,30 @@ from langchain_ollama import ChatOllama
 SYSTEM_TEMPLATE = textwrap.dedent("""
 You are a weather information agent.
 
+
+IMPORTANT: When the observations already answer the user's question, stop calling
+tools and respond with:
+Thought: <why you are done>
+Action: DONE
+Args: {{}}
+
+Rules:
+- NEVER invent argument values (coordinates, IDs, codes). If you do not have a
+  value yet, first call the tool that produces it.
+- NEVER pass a tool's own output back into that same tool.
+- Call each tool only once unless a genuinely new value needs it.
+- As soon as the observations answer the question, reply with Action: DONE.
+
+For each step where you need to call a tool, respond with EXACTLY three lines:
+
+Thought: <your reasoning about what to do next>
+Action: <exact tool name: {tool_names}, or DONE>
+Args: <valid JSON arguments for the tool>
+
+Examples (these show the FORMAT - use real values for the actual request):
+{tool_examples}
+
+Do NOT add extra text. Do NOT explain after your three lines.
 """).strip()
 
 # Regex patterns for parsing LLM responses
@@ -34,6 +58,60 @@ ARGS_RE = re.compile(r"Args:\s*(\{.*?\})(?:\s|$)", re.S | re.IGNORECASE)
 # ╔══════════════════════════════════════════════════════════════════╗
 # ║ 2.  Turn DISCOVERED MCP tools into prompt text                   ║
 # ╚══════════════════════════════════════════════════════════════════╝
+
+_SAMPLE_VALUES = {"string": '"example"', "number": "0.0",
+                  "integer": "0", "boolean": "true"}
+
+
+def _params(tool) -> dict:
+    """Return the {name: schema} argument properties of an MCP tool."""
+    schema = getattr(tool, "input_schema", None) or {}
+    return schema.get("properties", {}) or {}
+
+
+def _sample(prop: dict) -> str:
+    """A placeholder value of the right JSON type, for the examples."""
+    return _SAMPLE_VALUES.get(prop.get("type"), '"value"')
+
+
+def format_tool_catalogue(tools) -> str:
+    """Render discovered MCP tools as the tool list for the system prompt."""
+    blocks = []
+    for tool in tools:
+        params = _params(tool)
+        signature = ", ".join(f"{n}: {p.get('type', 'any')}" for n, p in params.items())
+        block = [f"{tool.name}({signature})"]
+        description = (tool.description or "").strip()
+        if description:
+            block.append(f"    {description.splitlines()[0]}")
+        blocks.append("\n".join(block))
+    return "\n\n".join(blocks)
+
+
+def _needs_lookup(tool) -> list[str]:
+    """Names of this tool's numeric arguments - values only another tool can supply."""
+    return [n for n, p in _params(tool).items() if p.get("type") in ("number", "integer")]
+
+
+def format_tool_examples(tools) -> str:
+    """Build one worked Thought/Action/Args example per discovered tool.
+
+    Tools whose arguments are all text come first; tools that take numbers come
+    after, because those numbers have to come from an earlier Observation. The
+    order is derived from the schemas, so no tool is named here.
+    """
+    examples = []
+    for tool in sorted(tools, key=lambda t: bool(_needs_lookup(t))):
+        args = ", ".join(f'"{n}": {_sample(p)}' for n, p in _params(tool).items())
+        needs = _needs_lookup(tool)
+        thought = (f"I need to use {tool.name} - its {', '.join(needs)} must be copied "
+                   f"from an earlier Observation" if needs
+                   else f"I need to use {tool.name}")
+        examples.append(f"Thought: {thought}\n"
+                        f"Action: {tool.name}\n"
+                        f"Args: {{{args}}}")
+    return "\n\n".join(examples)
+
 
 
 # ╔══════════════════════════════════════════════════════════════════╗
@@ -100,11 +178,17 @@ def extract_city(prompt: str) -> Optional[str]:
             print(f"[Step {step}]")
 
 
-            # Check if LLM says we're done
-            if action == "done":
-                print("\n" + "="*60)
-                print("Agent has gathered sufficient information!")
-                print("="*60)
+            # Small models sometimes plan several steps at once. Keep only the
+            # FIRST Thought/Action/Args triple - the loop will ask again next turn.
+            triples = response.split("Thought:")
+            if len(triples) > 2:
+                response = "Thought:" + triples[1].rstrip()
+            print(response)
+
+            else:
+                print("\n❌ Error: Could not parse Action from LLM response")
+                return
+
 
                 if not gathered:
                     print("\nFinal Answer:\n  No tools were called, so there is nothing to report.")
@@ -118,16 +202,26 @@ def extract_city(prompt: str) -> Optional[str]:
                     for name, value in gathered)
                 answer = llm.invoke(
                     f"Question: {question}\n\nTool results:\n{results}\n\n"
-                    "Write ONE sentence answering the question. Use ONLY the numbers "
-                    "and words shown above, copied exactly - never calculate or convert "
-                    "anything yourself. A field name ending in _c is degrees Celsius; a "
-                    "convert_c_to_f result is degrees Fahrenheit.").content.strip()
+                    "Write ONE sentence answering the question. Include EVERY value "
+                    "the tools returned that helps answer it - for a weather question "
+                    "that means the conditions AND the temperature, not just one of "
+                    "them. Use ONLY the numbers and words shown above, copied exactly - "
+                    "never calculate anything yourself. Ignore any field named code. "
+                    "A field name ending in _c is degrees Celsius.").content.strip()
 
                 print("\nFinal Answer:")
                 print(f"  {answer}")
                 print(f"\n  (tools used: {', '.join(dict.fromkeys(n for n, _ in gathered))})")
                 return
 
+            # Only tools the server actually advertised can be called
+            if action not in tool_names:
+                print(f"\n⚠️  '{action}' was not discovered from the server; asking the LLM to retry")
+                messages.append({"role": "assistant", "content": response})
+                messages.append({"role": "user", "content":
+                                 f"Observation: '{action}' is not an available tool. "
+                                 f"Valid tools: {', '.join(sorted(tool_names))}, or DONE."})
+                continue
 
             # Parse arguments
             args_match = ARGS_RE.search(response)
