@@ -517,10 +517,8 @@ Tell me about the Eastern office
 
 There *is not* an **Eastern* office. But there *is* a **Northeast** office in the data, and it comes back as the top retrieved snippet. Notice though that, thanks to being grounded in the data from the PDF, the agent still reports correctly that the Eastern office is not listed. One line in the system prompt is what stops it:
 
-```
-Never substitute a similarly named office for the one the user asked about - if the exact
-office the user named is not in the documents, say that, even if a close name exists.
-```
+> Never substitute a similarly named office for the one the user asked about - if the exact
+> office the user named is not in the documents, say that, even if a close name exists.
 
 ![Running agent](./images/aip62.png?raw=true "Running agent") 
 
