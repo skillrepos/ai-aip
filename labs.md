@@ -1,7 +1,7 @@
 # Implementing AI Agents in Python
 ## Using frameworks, MCP, and RAG for agentic AI
 ## Session labs 
-## Revision 1.52 - 09/09/26
+## Revision 1.53 - 09/09/26
 
 **Follow the startup instructions in the README.md file IF NOT ALREADY DONE!**
 
@@ -404,6 +404,8 @@ cat currency_memory.json
 10. Start the agent again and enter "history" to see that the memory survived the restart. Then try another partial query, such as:
 
 ```
+python curr_conv_agent.py
+history
 convert 300
 ```
 
