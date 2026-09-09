@@ -4,11 +4,7 @@ Lab 2: FastMCP Weather Server
 ────────────────────────────────────────────────────────────────────────
 A robust FastMCP server that provides weather and geocoding services via HTTP.
 
-Tools Provided
---------------
-1. get_weather(lat, lon) → dict with temperature °C, WMO code, conditions
-2. convert_c_to_f(c) → float (temperature in °F)
-3. geocode_location(name) → dict with latitude, longitude, location name
+
 
 Key Features
 ------------
@@ -69,29 +65,13 @@ TRANSIENT_CODES = {429, 500, 502, 503, 504}  # HTTP codes worth retrying
 # ╔══════════════════════════════════════════════════════════════════╗
 # ║ 3.  MCP Server initialization and tool definitions               ║
 # ╚══════════════════════════════════════════════════════════════════╝
-mcp = FastMCP("WeatherServer")
+
 
 # ─── Weather Tool ────────────────────────────────────────────────────
 
 @mcp.tool
+def get_weather(lat: float, lon: float) -> dict:
 
-    """
-    Fetch **current weather** from Open-Meteo and return a concise dict.
-
-    Retry policy
-    ------------
-    * Up to MAX_RETRIES total attempts with fresh connections.
-    * Retries on network errors **or** HTTP 429/5xx.
-    * Exponential back-off (1.5 s, 2.25 s, …).
-    * Each retry uses a new session to avoid connection pool issues.
-
-    Parameters
-    ----------
-    lat, lon : float
-        Geographic coordinates in decimal degrees.
-
-    Returns
-    -------
    
 
 
@@ -142,33 +122,10 @@ mcp = FastMCP("WeatherServer")
     }
 
 
-# ─── Temperature Conversion Tool ─────────────────────────────────────
-
-@mcp.tool
-
-
-
 # ─── Geocoding Tool ──────────────────────────────────────────────────
 
 @mcp.tool
 def geocode_location(name: str) -> dict:
-    """
-    Geocode a location name to latitude/longitude coordinates using Open-Meteo's geocoding API.
-
-    Retry policy
-    ------------
-    * Up to MAX_RETRIES total attempts with fresh connections.
-    * Retries on network errors **or** HTTP 429/5xx.
-    * Exponential back-off (1.5 s, 2.25 s, …).
-    * Each retry uses a new session to avoid connection pool issues.
-
-    Parameters
-    ----------
-    name : str
-        Location name (e.g., "San Francisco", "Paris, France", "London, UK")
-
-    Returns
-    -------
 
 
     # Retry loop with fresh connections
