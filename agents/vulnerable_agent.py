@@ -187,7 +187,7 @@ def main():
             tools=[lookup_benefits, check_pto_balance, update_salary, export_employee_data, send_company_email],
             model=llm,
             instructions=SYSTEM_PROMPT,
-            max_steps=3,  # Limit steps to prevent hanging on final response
+            max_steps=2,  # Cap the loop: llama3.2 sometimes re-calls the same tool instead of finishing
         )
     except Exception as e:
         print(f"[ERROR] Failed to initialize agent: {e}")
