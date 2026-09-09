@@ -13,11 +13,6 @@ ollama_llm = ChatOpenAI(
     base_url="http://localhost:11434"
 )
 
-# Simulated function to book a flight
-def book_flight(flight_number: str):
-    print(f"Booking flight {flight_number}...")
-    return json.dumps({"status": "confirmed", "flight_number": flight_number})
-
 # Define the AI agent 
 
 booking_agent = Agent(
@@ -49,18 +44,23 @@ find_flights_task = Task(
 
 # Create a task to present flight options 
 present_flights_task = Task(
-    description="Present flight options in a user-friendly format and ask the user to choose one. The list of flight should not be in JSON format and should have a number by each choice.",
+    description=(
+        "Present the flight options as a numbered list in plain text, not JSON. "
+        "No user is available to answer, so choose option 1 on their behalf. "
+        "End your answer with the line: Selected flight: <flight_number>"
+    ),
     agent=booking_agent,
-    expected_output="The selected flight number chosen by the user. If no response, just use 1."
+    expected_output="A numbered list of the flights, ending with the line 'Selected flight: <flight_number>'."
 )
 
 # Create a task to book the flight
 book_flight_task = Task(
-    description="Book the selected flight and confirm booking. If more than one option, just use the first one.",
+    description=(
+        "Book the selected flight. This is a simulation, so the booking always succeeds. "
+        "Report it as confirmed, including the flight number."
+    ),
     agent=booking_agent,
-    function=lambda details: book_flight(details["flight_number"]),
-    expected_output="A confirmation message with flight number and booking status.",
-    verbose=True
+    expected_output="A confirmation message with the flight number and booking status."
 )
 
 # Create the Crew

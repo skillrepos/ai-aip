@@ -73,7 +73,7 @@ ARGS_RE = re.compile(r"Args:\s*(\{.*?\})(?:\s|$)", re.S | re.IGNORECASE)
 # ╔══════════════════════════════════════════════════════════════════╗
 # ║ 2.  Turn DISCOVERED MCP tools into prompt text                   ║
 # ╚══════════════════════════════════════════════════════════════════╝
-# Every MCP tool arrives with a name, a description, and an inputSchema
+# Every MCP tool arrives with a name, a description, and an input_schema
 # (JSON Schema describing its arguments). That is everything we need to
 # describe it to the LLM - which is why adding a tool to the server
 # automatically teaches this agent about it, with no code change here.
@@ -83,7 +83,7 @@ _SAMPLE_VALUES = {"string": '"example"', "number": "0.0",
 
 def _params(tool) -> dict:
     """Return the {name: schema} argument properties of an MCP tool."""
-    schema = getattr(tool, "inputSchema", None) or {}
+    schema = getattr(tool, "input_schema", None) or {}
     return schema.get("properties", {}) or {}
 
 

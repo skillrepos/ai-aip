@@ -1,7 +1,7 @@
 # Implementing AI Agents in Python
 ## Using frameworks, MCP, and RAG for agentic AI
 ## Session labs 
-## Revision 1.42 - 09/07/26
+## Revision 1.43 - 09/08/26
 
 **Follow the startup instructions in the README.md file IF NOT ALREADY DONE!**
 
@@ -566,7 +566,7 @@ code -d ../extra/lab5-code.txt agent5.py
 
 <br>
 
-The *agent5.py* template already has the imports, the LLM setup, a simulated flight-booking function, and the code at the bottom that kicks off the "*crew*". You'll fill in the tasks and the crew itself.
+The *agent5.py* template already has the imports, the LLM setup, and the code at the bottom that kicks off the "*crew*". You'll fill in the tasks and the crew itself.
 
 <br>
 
@@ -580,7 +580,7 @@ The *agent5.py* template already has the imports, the LLM setup, a simulated fli
 
 <br><br>
 
-3. Run it and watch the workflow. There is a lot of output, so this takes a while. **NOTE: if the agent prompts for human input to pick a flight, none is needed - the flight data is simulated.**
+3. Run it and watch the workflow. There is a lot of output, so this takes a while. The flights and the booking are simulated - the agent picks the first option itself and reports the booking as confirmed.
 
 ```
 python agent5.py

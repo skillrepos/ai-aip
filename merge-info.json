@@ -160,7 +160,7 @@
         ]
       },
       {
-        "anchor": "# Every MCP tool arrives with a name, a description, and an inputSchema",
+        "anchor": "# Every MCP tool arrives with a name, a description, and an input_schema",
         "title": "Placeholder values for examples",
         "note": "**A JSON type -> sample value map, used to build a worked example for each discovered tool.**"
       },
@@ -169,7 +169,7 @@
         "lines": 57,
         "title": "Turn discovered tools into prompt text",
         "note": [
-          "**Reads each tool's `inputSchema` to build its signature, description, and example.**",
+          "**Reads each tool's `input_schema` to build its signature, description, and example.**",
           "- Examples are ordered from the schemas: text-only tools first, tools with numeric args after (their numbers must come from an Observation)",
           "- `build_system_prompt()` fills the template's placeholders",
           "- Add a tool to the server and the agent learns it - no edit here"
@@ -298,12 +298,12 @@
       {
         "anchor": "present_flights_task = Task(",
         "title": "Task: present options",
-        "note": "**Formats the flights for the user to choose from.**"
+        "note": "**Lists the flights as numbered choices and picks option 1, since no user is there to answer.**"
       },
       {
         "anchor": "book_flight_task = Task(",
         "title": "Task: book the flight",
-        "note": "**Books the chosen flight** — note `function=` runs real Python here, not just the LLM."
+        "note": "**Books the chosen flight and reports it as confirmed.** The booking is simulated - the agent describes it rather than calling a real service."
       },
       {
         "anchor": "crew = Crew(",

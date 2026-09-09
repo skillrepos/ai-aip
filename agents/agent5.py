@@ -13,11 +13,6 @@ ollama_llm = ChatOpenAI(
     base_url="http://localhost:11434"
 )
 
-# Simulated function to book a flight
-def book_flight(flight_number: str):
-    print(f"Booking flight {flight_number}...")
-    return json.dumps({"status": "confirmed", "flight_number": flight_number})
-
 # Define the AI agent 
 
 # Define the tasks with expected outputs
