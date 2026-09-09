@@ -1,7 +1,7 @@
 # Implementing AI Agents in Python
 ## Using frameworks, MCP, and RAG for agentic AI
 ## Session labs 
-## Revision 1.51 - 09/09/26
+## Revision 1.52 - 09/09/26
 
 **Follow the startup instructions in the README.md file IF NOT ALREADY DONE!**
 
@@ -111,7 +111,7 @@ python agent1.py
 
 <br><br>
 
-**Steps 9-11 below are optional.** They show *why* the geocode tool matters, and add a second merge. If you are running short on time, skip to Lab 2 - nothing later depends on them.
+**Steps 9-11 below are optional.** If you are running short on time, you can skip them or do them later. Nothing later depends on them.
 
 9. Now try putting in a name that isn't a real place - for example *Island of Narnia*. The model will likely try to guess/hallucinate coordinates on its own and follow up by fetching weather for the unreal coordinates and return fake weather.
 
@@ -234,6 +234,8 @@ What is the weather in New York?
 ![Agent using MCP client running](./images/aip24.png?raw=true "Agent using MCP client running") 
 
 <br><br>
+
+**Steps 9-11 below are optional.**  If you are running short on time, you can skip them or do them later. Nothing later depends on them.
 
 9. Now let's prove discovery is doing real work by adding a **third** tool the server doesn't offer today. Stop the client with `exit` and the server with `CTRL-C`. (Stopping the server prints a long traceback that ends in `KeyboardInterrupt` - that is simply how this server shuts down, not an error.) Then merge the new tool in the same way you built the server:
 
