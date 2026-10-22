@@ -24,7 +24,7 @@ def build_model():
     provider = os.environ.get("LAB8_PROVIDER", "").strip().lower()
     groq_key = os.environ.get("GROQ_API_KEY", "").strip()
     if provider == "groq" and groq_key:
-        name = os.environ.get("AGENT_MODEL", "qwen/qwen3.6-27b").strip()
+        name = os.environ.get("AGENT_MODEL", "qwen/qwen3.8-27b").strip()
         if not name.startswith("groq/"):
             name = "groq/" + name
         print(f"[MODEL] provider=groq  model={name}")

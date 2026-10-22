@@ -1,7 +1,7 @@
 # Implementing AI Agents in Python
 ## Using frameworks, MCP, and RAG for agentic AI
 ## Session labs 
-## Revision 1.55 - 09/09/26
+## Revision 1.56 - 10/22/26
 
 **Follow the startup instructions in the README.md file IF NOT ALREADY DONE!**
 
@@ -129,13 +129,9 @@ code -d ../extra/lab1-code-v2.txt agent1.py
 
 <br><br>
 
-11.  Now, run the agent again and put in a fake location. This time, the agent should call geocode_location first, see an error come back in the observation, skip the get_weather call entirely, and produce a Final: answer telling you the location couldn't be found. When done running the agent, type `exit` to quit.
+11.  Now, run the agent again and put in a fake location - try *Atlantis City*. This time the agent calls geocode_location first, sees the lookup fail, skips the get_weather call entirely, and produces a Final: answer telling you the location couldn't be found. (Depending on the run, the failed lookup may show up as an `Observation:` line, or the model may fold the tool call and its final answer into one reply - either way, no fake weather.) When done running the agent, type `exit` to quit.
 
 ![Fake place rerun](./images/aip75.png?raw=true "Fake place rerun")
-
-<br><br>
-
-12. Exit the agent by entering `exit`.
 
 <br><br>
 
@@ -170,7 +166,7 @@ code -d ../extra/lab1-code-v2.txt agent1.py
 code -d ../extra/lab2_mcp_server.txt mcp_server_v2.py
 ```
 
-As you merge, notice FastMCP's *@mcp.tool* decorators marking functions as MCP tools, and the *streamable-http* transport. Close the tab when done to save.
+As you merge, notice FastMCP's *@mcp.tool* decorators marking functions as MCP tools, and the *http* transport. Close the tab when done to save.
 
 ![MCP server code](./images/aip81.png?raw=true "MCP server code") 
 
@@ -278,8 +274,6 @@ It calls `get_forecast` - a tool that did not exist the last time you ran this a
 
 <br><br>
 
-12. Stop the client by typing `exit`. And stop the server via `Ctrl+c`.
-    
 <p align="center">
 **[END OF LAB]**
 </p>
@@ -352,7 +346,7 @@ python curr_conv_agent.py
 5. Look for the model line at the top - it confirms which model is in use:
 
 ```
-[MODEL] provider=groq  model=groq/qwen/qwen3.6-27b      (if you set up Groq)
+[MODEL] provider=groq  model=groq/qwen/qwen3.8-27b      (if you set up Groq)
 [MODEL] provider=ollama  model=ollama_chat/llama3.2          (local fallback)
 ```
 
@@ -447,7 +441,7 @@ convert 300
 
 <br><br>
 
-2. The agent builds a vector database from that file. That means it splits it into "chunks" of text, then encodes each chunk and stores it as a vector of numbers in a `ChromaDB` vector database. Our prompts are turned into vectors and compared against the stored vectors to find the best mathematical matches. You can see the part of the code that does this in `agentic_rag_agent.py`, lines 117-127, if interested.
+2. The agent builds a vector database from that file. That means it splits it into "chunks" of text, then encodes each chunk and stores it as a vector of numbers in a `ChromaDB` vector database. Our prompts are turned into vectors and compared against the stored vectors to find the best mathematical matches. You can see the part of the code that does this in `agentic_rag_agent.py`, lines 193-203 - under the `Indexing offices.pdf into ChromaDB` banner near the bottom - if interested.
 
 ```
 code agentic_rag_agent.py
@@ -477,7 +471,7 @@ Merge the **four sections** in turn - each carries a `>>>>> MERGE SECTION N` ban
 
 <br><br>
 
-4. Run the agent. On the **first** run it downloads a ~90 MB embedding model and indexes the PDF, so give it a moment before the prompt appears. It then asks whether to change your starting location - just answer `n` to keep the default. (The starting location is only used for distance calculations later.)
+4. Run the agent. On the **first** run it indexes the PDF, so give it a moment before the prompt appears. (If you skipped the warmup in the README, it also downloads a ~90 MB embedding model first.) It then asks whether to change your starting location - just answer `n` to keep the default. (The starting location is only used for distance calculations later.)
 
 ```
 python agentic_rag_agent.py
@@ -536,7 +530,17 @@ The model plans this on its own: two `distance_to` calls, each with its own `[GR
 
 <br><br>
 
-8. Type `exit` when done.
+8. Finally, let's see the agent combine grounded document data with the model's own knowledge via the `city_facts` tool you merged in. Ask:
+
+```
+Tell me about the Northeast office and give me an interesting fact about the city it's in
+```
+
+The office details come from the indexed PDF (watch for the `[GROUND]` lines), while the interesting fact comes from the `city_facts` tool - model knowledge, kept clearly separate from the document data.
+
+<br><br>
+
+9. Type `exit` when done.
 
 <br><br>
 
@@ -776,7 +780,7 @@ Check if a number is prime, but call a function that does not exist so it fails 
 
 <br><br>
 
-7. This time the "Critique" comes back as a **FAIL** - either the code crashed at runtime or it ran but gave the wrong answer, and the critic saw it either way. (A small local model often mislabels *why* it failed - you may see it report a "runtime error" on code that ran fine but returned the wrong result. What matters is that it caught the bad answer and revised.) The fixer agent then revises it, shows you the "Fixed Code", runs that, and reports "Executed successfully." Run it, judge it, fix it, run it again - that loop is the reflective pattern.
+7. This time the "Critique" should come back as a **FAIL** - either the code crashed at runtime or it ran but gave the wrong answer, and the critic saw it either way. (If it comes back **PASS** instead, just run the same prompt again - the critic is itself a model and occasionally waves a bad answer through.) (A small local model often mislabels *why* it failed - you may see it report a "runtime error" on code that ran fine but returned the wrong result. What matters is that it caught the bad answer and revised.) The fixer agent then revises it, shows you the "Fixed Code", runs that, and reports "Executed successfully." Run it, judge it, fix it, run it again - that loop is the reflective pattern.
 
 ![Fix run](./images/aip9.png?raw=true "Fix run")
 

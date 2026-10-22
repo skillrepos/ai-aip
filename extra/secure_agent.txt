@@ -28,7 +28,7 @@ def build_model():
     provider = os.environ.get("LAB8_PROVIDER", "").strip().lower()
     groq_key = os.environ.get("GROQ_API_KEY", "").strip()
     if provider == "groq" and groq_key:
-        name = os.environ.get("AGENT_MODEL", "qwen/qwen3.6-27b").strip()
+        name = os.environ.get("AGENT_MODEL", "qwen/qwen3.8-27b").strip()
         if not name.startswith("groq/"):
             name = "groq/" + name
         print(f"[MODEL] provider=groq  model={name}")
@@ -101,7 +101,7 @@ def validate_input(user_input):
 
     # Regex patterns that detect common prompt injection techniques
     hijacking_patterns = [
-        r"ignore\s+(your|all|previous|prior)\s+(instructions|rules|prompt)",
+        r"ignore\s+(?:\w+\s+){0,3}(instructions|rules|prompt)",
         r"forget\s+(about|your|everything|all)",
         r"you\s+are\s+now\s+a",
         r"your\s+new\s+(goal|purpose|job|role|instructions?)\s+is",

@@ -3,13 +3,13 @@
 # Usage:  bash scripts/check-groq.sh
 set -uo pipefail
 
-# The model each lab uses, and what to try if it is not available.
-# Lab 3 has no hosted stand-in: the other Groq models cannot drive a smolagents
-# CodeAgent. The lab falls back to the local model by itself, so there is nothing
-# to export - hence no alternates listed here.
-LAB3_MODEL="${LAB3_MODEL:-qwen/qwen3.6-27b}"      # Lab 3 - smolagents CodeAgent
-LAB3_ALTERNATES=""
-LAB3_NOTE="      Nothing to do - Lab 3 detects this and uses the local model instead."
+# The model each lab uses, and what to try if it is not available. When an
+# alternate responds, the script prints the export AGENT_MODEL=... line to use it,
+# so you keep a hosted model instead of dropping to the slow local fallback.
+LAB3_MODEL="${LAB3_MODEL:-qwen/qwen3.8-27b}"      # Lab 3 - smolagents CodeAgent
+LAB3_ALTERNATES="openai/gpt-oss-120b"
+LAB3_NOTE="      No hosted alternative responded. Lab 3 falls back to the local model
+      by itself - slower, but it works."
 LAB4_MODEL="${LAB4_MODEL:-openai/gpt-oss-120b}"   # Lab 4 - native tool calling
 LAB4_ALTERNATES="openai/gpt-oss-20b"
 LAB4_NOTE="      No hosted alternative responded. Run the lab without Groq instead:

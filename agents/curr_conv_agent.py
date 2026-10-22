@@ -91,7 +91,7 @@ class RateLimitRetryModel(LiteLLMModel):
 #   withdrawn it, the lab spots that and uses the local model too - so the lab
 #   always runs, just slower.
 
-GROQ_MODEL = "qwen/qwen3.6-27b"   # the hosted model this lab prefers
+GROQ_MODEL = "qwen/qwen3.8-27b"   # the hosted model this lab prefers
 
 
 def groq_offers(key, model):
@@ -173,6 +173,17 @@ def parse_and_fill(query: str):
     save_memory(memory)
     return amt, frm, to
 
+def as_number(result):
+    """The CodeAgent may answer with a bare number or a sentence containing one."""
+    try:
+        return float(result)
+    except (TypeError, ValueError):
+        m = re.search(r"-?\d[\d,]*\.?\d*", str(result))
+        if not m:
+            raise ValueError(f"no number in agent result: {result!r}")
+        return float(m.group().replace(",", ""))
+
+
 # -----------------------------------------------------------------------------
 # INTERACTIVE LOOP + HISTORY DISPLAY
 # -----------------------------------------------------------------------------
@@ -203,7 +214,7 @@ if __name__ == "__main__":
             # Store and persist this interaction
 
             # Friendly output
-            print(f"{amt} {frm} is approximately {float(result):.2f} {to}.\n")
+            print(f"{amt} {frm} is approximately {value:.2f} {to}.\n")
 
         except Exception as e:
             print(f"Error: {e}\n")
