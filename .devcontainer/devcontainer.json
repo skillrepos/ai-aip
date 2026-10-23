@@ -32,8 +32,7 @@
                 }
             },
             "extensions": [
-               "mathematic.vscode-pdf",
-               "vstirbu.vscode-mermaid-preview"
+               "mathematic.vscode-pdf"
             ]
         }
     },
