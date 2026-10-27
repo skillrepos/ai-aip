@@ -273,14 +273,18 @@ def parse_and_fill(query: str):
     return amt, frm, to
 
 def as_number(result):
-    """The CodeAgent may answer with a bare number or a sentence containing one."""
+    """The CodeAgent may answer with a bare number or a sentence containing one.
+
+    A sentence usually leads with the INPUT amount ("100 USD = 89.51 EUR"),
+    so the converted result is the LAST number in the text, not the first.
+    """
     try:
         return float(result)
     except (TypeError, ValueError):
-        m = re.search(r"-?\d[\d,]*\.?\d*", str(result))
-        if not m:
+        matches = re.findall(r"-?\d[\d,]*\.?\d*", str(result))
+        if not matches:
             raise ValueError(f"no number in agent result: {result!r}")
-        return float(m.group().replace(",", ""))
+        return float(matches[-1].replace(",", ""))
 
 
 # -----------------------------------------------------------------------------
