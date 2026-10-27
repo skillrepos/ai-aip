@@ -1,7 +1,7 @@
 # Implementing AI Agents in Python
 ## Using frameworks, MCP, and RAG for agentic AI
 ## Session labs 
-## Revision 1.56 - 10/22/26
+## Revision 1.57 - 10/27/26
 
 **Follow the startup instructions in the README.md file IF NOT ALREADY DONE!**
 
@@ -129,7 +129,7 @@ code -d ../extra/lab1-code-v2.txt agent1.py
 
 <br><br>
 
-11.  Now, run the agent again and put in a fake location - try *Atlantis City*. This time the agent calls geocode_location first, sees the lookup fail, skips the get_weather call entirely, and produces a Final: answer telling you the location couldn't be found. (Depending on the run, the failed lookup may show up as an `Observation:` line, or the model may fold the tool call and its final answer into one reply - either way, no fake weather.) When done running the agent, type `exit` to quit.
+11.  Now, run the agent again and put in a fake location - you can try *Island of Narnia* again or a new one like *Atlantis City*. This time the agent calls geocode_location first, sees the lookup fail, skips the get_weather call entirely, and produces a Final: answer telling you the location couldn't be found. (Depending on the run, the failed lookup may show up as an `Observation:` line, or the model may fold the tool call and its final answer into one reply - either way, no fake weather.) When done running the agent, type `exit` to quit.
 
 ![Fake place rerun](./images/aip75.png?raw=true "Fake place rerun")
 
