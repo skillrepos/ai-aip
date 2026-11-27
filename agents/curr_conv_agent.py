@@ -10,6 +10,11 @@ import warnings
 # prints a long harmless warning on every model call. Keep it out of the lab output.
 warnings.filterwarnings("ignore", message="Pydantic serializer warnings")
 
+import litellm
+# LiteLLM prints a "Give Feedback / Get Help" banner whenever a call fails - including
+# the free-tier rate-limit errors this lab waits out on purpose. Keep it off the screen.
+litellm.suppress_debug_info = True
+
 # -----------------------------------------------------------------------------
 # MEMORY PERSISTENCE (with history)
 # -----------------------------------------------------------------------------
@@ -91,7 +96,7 @@ class RateLimitRetryModel(LiteLLMModel):
 #   withdrawn it, the lab spots that and uses the local model too - so the lab
 #   always runs, just slower.
 
-GROQ_MODEL = "openai/gpt-oss-120b"   # a Groq PRODUCTION model - the one this lab prefers
+GROQ_MODEL = "qwen/qwen3.8-27b"   # the hosted model this lab prefers - it writes clean code for the CodeAgent
 
 
 def groq_offers(key, model):
@@ -114,17 +119,21 @@ def build_model():
 
     Default: local Ollama (llama3.2). Set AGENT_PROVIDER=groq and GROQ_API_KEY to
     use the hosted Groq model instead (stronger reasoning). Optionally override
-    the model name with AGENT_MODEL. Unset vars -> local Ollama fallback.
+    the model name with LAB3_MODEL. Unset vars -> local Ollama fallback.
     """
     provider = os.environ.get("AGENT_PROVIDER", "").strip().lower()
     groq_key = (os.environ.get("GROQ_API_KEY") or "").strip()
-    override = os.environ.get("AGENT_MODEL", "").strip()
+    override = os.environ.get("LAB3_MODEL", "").strip()
     if provider == "groq" and groq_key and (override or groq_offers(groq_key, GROQ_MODEL)):
         model_name = override or GROQ_MODEL
         if not model_name.startswith("groq/"):
             model_name = "groq/" + model_name
         print(f"[MODEL] provider=groq  model={model_name}")
-        return RateLimitRetryModel(model_id=model_name, api_key=groq_key, temperature=0.0)
+        # retry=False: smolagents would otherwise retry rate limits itself, silently,
+        # for up to a few minutes. RateLimitRetryModel (above) waits only as long as
+        # Groq asks and tells you it is waiting.
+        return RateLimitRetryModel(model_id=model_name, api_key=groq_key, temperature=0.0,
+                                   retry=False)
     if provider == "groq" and groq_key:
         print(f"[MODEL] Groq no longer offers {GROQ_MODEL} - using the local model instead.")
     else:
@@ -136,6 +145,7 @@ def build_model():
         api_base="http://localhost:11434",
         num_ctx=4096,
         temperature=0.0,  # deterministic tool use
+        retry=False,
     )
 
 model = build_model()

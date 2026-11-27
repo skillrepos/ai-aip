@@ -4,10 +4,12 @@
 set -uo pipefail
 
 # The model each lab uses, and what to try if it is not available. When an
-# alternate responds, the script prints the export AGENT_MODEL=... line to use it,
+# alternate responds, the script prints the export LAB3_MODEL=/LAB4_MODEL=... line to use it,
 # so you keep a hosted model instead of dropping to the slow local fallback.
-LAB3_MODEL="${LAB3_MODEL:-openai/gpt-oss-120b}"   # Lab 3 - smolagents CodeAgent
-LAB3_ALTERNATES="openai/gpt-oss-20b qwen/qwen3.8-27b"
+LAB3_MODEL="${LAB3_MODEL:-qwen/qwen3.8-27b}"      # Lab 3 - smolagents CodeAgent
+# No alternates for Lab 3: the gpt-oss models answer with tool calls instead of the
+# Python code a CodeAgent needs, so they do not work for this lab.
+LAB3_ALTERNATES=""
 LAB3_NOTE="      No hosted alternative responded. Lab 3 falls back to the local model
       by itself - slower, but it works."
 LAB4_MODEL="${LAB4_MODEL:-openai/gpt-oss-120b}"   # Lab 4 - native tool calling
@@ -61,7 +63,7 @@ check_lab() {
   for alt in $alternates; do
     if ping_model "$alt"; then
       echo "      Use this instead, then re-run the lab:"
-      echo "          export AGENT_MODEL=$alt"
+      echo "          export LAB${lab}_MODEL=$alt"
       return
     fi
   done

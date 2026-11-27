@@ -5,6 +5,15 @@ Lab 2: TAO Agent with FastMCP Weather Server
 A TRUE agentic implementation where the LLM dynamically selects which
 tools to call and when to stop. This demonstrates:
 
+* **MCP Discovery**: the agent asks the server which tools exist
+  (`tools/list`) and BUILDS its prompt from the answer - nothing about the
+  tools is hardcoded in this file.
+* **LLM-Driven Control Flow**: Agent loop runs until LLM says "DONE"
+* **Dynamic Tool Selection**: LLM chooses which MCP tool to invoke each step
+* **TAO Protocol**: Full thought/action/observation trace with real agent behavior
+
+Example Flow:
+geocode_location → get_weather → DONE
 
 Prerequisites: FastMCP weather server must be running on localhost:8000
 """
@@ -22,6 +31,9 @@ from langchain_ollama import ChatOllama
 # ╔══════════════════════════════════════════════════════════════════╗
 # ║ 1.  System prompt TEMPLATE                                       ║
 # ╚══════════════════════════════════════════════════════════════════╝
+# Note what is NOT here: the tool list. The {placeholders} below are filled
+# in at runtime from what the MCP server advertises, so this agent works
+# with whatever tools the server happens to expose.
 SYSTEM_TEMPLATE = textwrap.dedent("""
 You are a weather information agent.
 
@@ -54,11 +66,13 @@ Do NOT add extra text. Do NOT explain after your three lines.
 # Regex patterns for parsing LLM responses
 ACTION_RE = re.compile(r"Action:\s*(\w+)", re.IGNORECASE)
 ARGS_RE = re.compile(r"Args:\s*(\{.*?\})(?:\s|$)", re.S | re.IGNORECASE)
-
 # ╔══════════════════════════════════════════════════════════════════╗
 # ║ 2.  Turn DISCOVERED MCP tools into prompt text                   ║
 # ╚══════════════════════════════════════════════════════════════════╝
-
+# Every MCP tool arrives with a name, a description, and an input_schema
+# (JSON Schema describing its arguments). That is everything we need to
+# describe it to the LLM - which is why adding a tool to the server
+# automatically teaches this agent about it, with no code change here.
 _SAMPLE_VALUES = {"string": '"example"', "number": "0.0",
                   "integer": "0", "boolean": "true"}
 
@@ -160,10 +174,18 @@ def extract_city(prompt: str) -> Optional[str]:
 # ╔══════════════════════════════════════════════════════════════════╗
 # ║ 5.  Dynamic TAO loop with LLM-controlled tool selection          ║
 # ╚══════════════════════════════════════════════════════════════════╝
+async def run_dynamic(city: str, question: str, max_steps: int = 10) -> None:
+    """
+    Run a dynamic TAO agent loop where the LLM decides which tools to call.
+
+    Args:
+        city: The city to query about
+        question: The user's question, passed to the LLM as-is
+        max_steps: Maximum number of tool calls to prevent infinite loops
+    """
     llm = ChatOllama(model="llama3.2", temperature=0.0)
 
     async with Client("http://127.0.0.1:8000/mcp/") as mcp:
-
 
         print("\n" + "="*60)
         print("Dynamic TAO Agent - LLM Controls Tool Selection")
@@ -177,6 +199,8 @@ def extract_city(prompt: str) -> Optional[str]:
         for step in range(1, max_steps + 1):
             print(f"[Step {step}]")
 
+            # Get LLM's decision
+            response = llm.invoke(messages).content.strip()
 
             # Small models sometimes plan several steps at once. Keep only the
             # FIRST Thought/Action/Args triple - the loop will ask again next turn.
@@ -185,10 +209,22 @@ def extract_city(prompt: str) -> Optional[str]:
                 response = "Thought:" + triples[1].rstrip()
             print(response)
 
+            # Parse the action. Small models sometimes signal completion as a bare
+            # "Thought: DONE" with no Action line, so treat that as DONE too.
+            action_match = ACTION_RE.search(response)
+            if action_match:
+                action = action_match.group(1).lower()
+            elif re.search(r"\bDONE\b", response, re.IGNORECASE):
+                action = "done"
             else:
                 print("\n❌ Error: Could not parse Action from LLM response")
                 return
 
+            # Check if LLM says we're done
+            if action == "done":
+                print("\n" + "="*60)
+                print("Agent has gathered sufficient information!")
+                print("="*60)
 
                 if not gathered:
                     print("\nFinal Answer:\n  No tools were called, so there is nothing to report.")
@@ -235,7 +271,10 @@ def extract_city(prompt: str) -> Optional[str]:
                 print(f"\n❌ Error: Invalid JSON in Args: {e}")
                 return
 
+            # Dynamically call the tool the LLM selected
+            print(f"\n→ Calling MCP tool: {action}({json.dumps(args)})")
 
+            try:
             except ToolError as e:
                 print(f"❌ MCP Error: {e}\n")
                 # Add error to conversation and let LLM try to recover
@@ -252,6 +291,18 @@ def extract_city(prompt: str) -> Optional[str]:
                 messages.append({"role": "assistant", "content": response})
                 messages.append({"role": "user", "content": f"Observation: {result}"})
                 continue
+
+            # Record the result - by tool name, whatever the tool happened to be
+            gathered.append((action, result))
+
+            # Show observation
+            observation = f"Observation: {json.dumps(result) if isinstance(result, dict) else result}"
+            print(observation)
+            print()
+
+            # Add to conversation history
+            messages.append({"role": "assistant", "content": response})
+            messages.append({"role": "user", "content": observation})
 
         # Max steps reached
         print(f"\n⚠️  Reached maximum steps ({max_steps}) without completion")

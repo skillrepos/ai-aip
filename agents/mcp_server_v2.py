@@ -4,7 +4,10 @@ Lab 2: FastMCP Weather Server
 ────────────────────────────────────────────────────────────────────────
 A robust FastMCP server that provides weather and geocoding services via HTTP.
 
-
+Tools Provided
+--------------
+1. get_weather(lat, lon) → dict with temperature_c, WMO code, conditions
+2. geocode_location(name) → dict with latitude, longitude, location name
 
 Key Features
 ------------
@@ -66,14 +69,14 @@ TRANSIENT_CODES = {429, 500, 502, 503, 504}  # HTTP codes worth retrying
 # ║ 3.  MCP Server initialization and tool definitions               ║
 # ╚══════════════════════════════════════════════════════════════════╝
 
-
 # ─── Weather Tool ────────────────────────────────────────────────────
 
 @mcp.tool
 def get_weather(lat: float, lon: float) -> dict:
-
-   
-
+    url = (
+        "https://api.open-meteo.com/v1/forecast"
+        f"?latitude={lat}&longitude={lon}&current_weather=true"
+    )
 
     last_error = None
 
@@ -94,7 +97,14 @@ def get_weather(lat: float, lon: float) -> dict:
 
             resp.raise_for_status()
 
-
+            # Extract and return weather data
+            cw = resp.json()["current_weather"]
+            code = cw["weathercode"]
+            return {
+                "temperature_c": cw["temperature"],
+                "code":        code,
+                "conditions":  WEATHER_CODES.get(code, "Unknown"),
+            }
 
         except requests.HTTPError as e:
             # HTTP errors (4xx, 5xx not already caught)
@@ -126,7 +136,33 @@ def get_weather(lat: float, lon: float) -> dict:
 
 @mcp.tool
 def geocode_location(name: str) -> dict:
+    """
+    Geocode a location name to latitude/longitude coordinates using Open-Meteo's geocoding API.
 
+    Retry policy
+    ------------
+    * Up to MAX_RETRIES total attempts with fresh connections.
+    * Retries on network errors **or** HTTP 429/5xx.
+    * Exponential back-off (1.5 s, 2.25 s, …).
+    * Each retry uses a new session to avoid connection pool issues.
+
+    Parameters
+    ----------
+    name : str
+        Location name (e.g., "San Francisco", "Paris, France", "London, UK")
+
+    Returns
+    -------
+    dict
+        {
+            "latitude": <float>,
+            "longitude": <float>,
+            "name": <matched location name>,
+            "error": <error message if request failed>
+        }
+    """
+    url = "https://geocoding-api.open-meteo.com/v1/search"
+    last_error = None
 
     # Retry loop with fresh connections
     for attempt in range(MAX_RETRIES):

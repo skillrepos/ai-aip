@@ -8,9 +8,10 @@ smolagents==1.26.0
 # that import. Do NOT bump ag2 to >=1.0 - move to "ag2-classic" instead.
 autogen==0.9.4
 ag2==0.9.4
+fix-busted-json==0.0.18   # needed by AG2's Ollama client (Lab 6) - imported inside autogen, not by our code
 
 # ── Model Context Protocol (MCP) server/client ──────────────────────────
-fastmcp==4.1.8        # 4.1.x carries security fixes over 4.0.x
+fastmcp==4.2.6        # current release - avoids the "update available" banner in Lab 2
 pydantic==2.13.5
 uvicorn[standard]==0.52.4
 

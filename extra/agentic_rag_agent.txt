@@ -39,12 +39,12 @@ if USE_GROQ:
     client = OpenAI(base_url="https://api.groq.com/openai/v1",
                     api_key=os.environ["GROQ_API_KEY"].strip(), max_retries=6)
     # openai/gpt-oss-120b is a Groq PRODUCTION model with solid native tool-calling.
-    # Override with AGENT_MODEL=<id> if Groq's catalog changes; scripts/check-groq.sh
+    # Override with LAB4_MODEL=<id> if Groq's catalog changes; scripts/check-groq.sh
     # lists what your key can currently reach.
-    MODEL = os.environ.get("AGENT_MODEL", "openai/gpt-oss-120b").strip()
+    MODEL = os.environ.get("LAB4_MODEL", "openai/gpt-oss-120b").strip()
 else:
     client = OpenAI(base_url="http://localhost:11434/v1", api_key="ollama")
-    MODEL = os.environ.get("AGENT_MODEL", "llama3.2").strip()
+    MODEL = "llama3.2"
 print(f"[AGENT] provider={'groq' if USE_GROQ else 'ollama'}  model={MODEL}")
 
 
@@ -208,7 +208,7 @@ def run_agent(user_query, start, max_steps=8):
         verdict = validate_answer(answer, state)
         print(f"    [SELF-CHECK] complete={verdict['complete']} {verdict['missing']}")
         if verdict["complete"]:
-            print("\n" + "=" * 60 + f"\nFINAL ANSWER:\n{answer}\n" + "=" * 60)
+            print("\n" + "=" * 60 + f"\nFINAL ANSWER:\n{answer.replace('**', '')}\n" + "=" * 60)
             return
         messages += [{"role": "assistant", "content": answer},
                      {"role": "user", "content": f"Missing: {verdict['missing']}. Use the tools, then answer."}]

@@ -72,27 +72,14 @@
     ],
     "extra/lab2_mcp_server.txt": [
       {
-        "anchor": "def get_weather(lat: float, lon: float) -> dict:",
+        "anchor": "mcp = FastMCP(\"WeatherServer\")",
         "lines": 1,
-        "title": "Weather MCP tool",
-        "note": "**Defines the get_weather tool.** FastMCP turns the typed args (lat, lon) into the tool's JSON schema automatically."
-      },
-      {
-        "anchor": "\"https://api.open-meteo.com/v1/forecast\"",
-        "endAnchor": ")",
-        "title": "Build the forecast URL",
-        "note": "**Constructs the Open-Meteo current-weather request from lat/lon.**"
-      },
-      {
-        "anchor": "# Extract and return weather data",
-        "title": "Return the weather dict",
-        "note": "**Parses the API response into temperature, code, and a friendly conditions string** — the tool's result."
-      },
-      {
-        "anchor": "url = \"https://geocoding-api.open-meteo.com/v1/search\"",
-        "endAnchor": "last_error = None",
-        "title": "Geocoding tool endpoint",
-        "note": "**Sets up the location-name → lat/lon lookup** used by the geocode tool."
+        "title": "Create the MCP server",
+        "note": [
+          "**One FastMCP object holds every tool this server offers.**",
+          "- Each `@mcp.tool` below registers a function with it",
+          "- The function's docstring becomes the description clients discover"
+        ]
       },
       {
         "anchor": "mcp.run(",
@@ -105,73 +92,22 @@
     ],
     "extra/lab2_mcp_agent.txt": [
       {
-        "anchor": "async def run_dynamic(city: str, question: str, max_steps: int = 10) -> None:",
-        "lines": 9,
-        "title": "The dynamic agent loop",
-        "note": "**Entry point: an async TAO loop where the LLM decides which MCP tool to call each step.** max_steps guards against infinite loops."
-      },
-      {
-        "anchor": "print(\"\\n\" + \"=\"*60)",
-        "endAnchor": "}",
-        "title": "Set up the results list",
-        "note": [
-          "**Prints the banner and creates `gathered`** - the running list of `(tool name, result)` pairs.",
-          "- A plain list, not fixed weather fields, because the tool set comes from discovery"
-        ]
-      },
-      {
-        "anchor": "# Get LLM's decision",
-        "endAnchor": "return",
-        "title": "Get and parse the decision",
-        "note": [
-          "**Asks the LLM for its next Action and extracts it with a regex.**",
-          "- Small models sometimes reply `Thought: DONE` with no `Action:` line - that counts as DONE too",
-          "- Anything else unparseable ends the run cleanly"
-        ]
-      },
-      {
-        "anchor": "# Dynamically call the tool the LLM selected",
-        "title": "Announce the tool call",
-        "note": "**Logs which MCP tool the model chose and its arguments** — the visible trace of the agent's decision."
-      },
-      {
-        "anchor": "result = unwrap(await mcp.call_tool(action, args))",
-        "lines": 1,
-        "title": "Call the tool over MCP",
-        "note": "**Invokes the chosen tool on the server through the MCP client** and unwraps the response."
-      },
-      {
-        "anchor": "# Record the result - by tool name, whatever the tool happened to be",
-        "endAnchor": "messages.append({\"role\": \"user\", \"content\": observation})",
-        "title": "Record result, feed back",
-        "note": [
-          "**Stores every tool result by name and appends the Observation to the message history.**",
-          "- Nothing here names a specific tool, so a tool added to the server later is recorded too"
-        ]
-      },
-      {
         "anchor": "The tools below were discovered from the MCP server at runtime.",
-        "endAnchor": "Do NOT add extra text. Do NOT explain after your three lines.",
         "title": "System prompt: built from discovery",
         "note": [
           "**The tool list is a `{tool_catalogue}` placeholder, filled at runtime from the server.**",
           "- Rules stop the model feeding a tool its own output",
           "- Doubled `{{}}` braces survive `.format()` as literal JSON"
-        ]
+        ],
+        "lines": 4
       },
       {
-        "anchor": "# Every MCP tool arrives with a name, a description, and an input_schema",
-        "title": "Placeholder values for examples",
-        "note": "**A JSON type -> sample value map, used to build a worked example for each discovered tool.**"
-      },
-      {
-        "anchor": "def _params(tool) -> dict:",
-        "lines": 57,
+        "anchor": "def build_system_prompt(tools) -> str:",
+        "lines": 7,
         "title": "Turn discovered tools into prompt text",
         "note": [
-          "**Reads each tool's `input_schema` to build its signature, description, and example.**",
-          "- Examples are ordered from the schemas: text-only tools first, tools with numeric args after (their numbers must come from an Observation)",
-          "- `build_system_prompt()` fills the template's placeholders",
+          "**Fills the prompt template with the tools the server just advertised.**",
+          "- The helpers above build each tool's signature and example from its schema",
           "- Add a tool to the server and the agent learns it - no edit here"
         ]
       },
@@ -192,21 +128,10 @@
         ]
       },
       {
-        "anchor": "# Only tools the server actually advertised can be called",
-        "title": "Reject undiscovered tools",
-        "note": [
-          "**Only names the server advertised are callable; anything else is sent back for a retry.**",
-          "- Proves discovery drives the code, not just the prompt"
-        ]
-      },
-      {
-        "anchor": "\"Write ONE sentence answering the question.",
-        "lines": 6,
-        "title": "Prompt: write the final answer",
-        "note": [
-          "**The summariser prompt - turns the collected tool results into one plain-English sentence.**",
-          "- \"copied exactly - never calculate anything yourself\" keeps the numbers honest"
-        ]
+        "anchor": "result = unwrap(await mcp.call_tool(action, args))",
+        "lines": 1,
+        "title": "Call the tool over MCP",
+        "note": "**Invokes the chosen tool on the server through the MCP client** and unwraps the response."
       }
     ],
     "extra/curr_conv_agent.txt": [
@@ -449,6 +374,34 @@
           "**Adds tomorrow's high, low and conditions as a new @mcp.tool on the server.**",
           "- Reuses the server's existing WEATHER_CODES table and retry settings",
           "- You change nothing in the agent - discovery finds this on its own"
+        ]
+      }
+    ],
+    "extra/lab5-code-v2.txt": [
+      {
+        "anchor": "# New agent for travel planning tasks",
+        "title": "Two new specialist agents",
+        "note": [
+          "**A travel agent finds flights; a customer service agent talks with the user.**",
+          "- Same LLM as the booking agent - only role, goal and backstory differ"
+        ],
+        "lines": 16
+      },
+      {
+        "anchor": "agent=customer_service_agent,",
+        "lines": 1,
+        "title": "Each task gets its specialist",
+        "note": [
+          "**Tasks now go to the agent whose role fits the job.**",
+          "- Extract and present: customer service; find: travel; book: booking"
+        ]
+      },
+      {
+        "anchor": "agents=[booking_agent, customer_service_agent, travel_agent],",
+        "lines": 1,
+        "title": "Add the agents to the crew",
+        "note": [
+          "**The crew only runs agents listed here - leave one out and its tasks fail.**"
         ]
       }
     ]
