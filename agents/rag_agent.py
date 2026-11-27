@@ -6,7 +6,6 @@ import math
 from openai import OpenAI
 import chromadb
 import pdfplumber
-from sentence_transformers import SentenceTransformer
 from chromadb.utils import embedding_functions
 
 # ANSI color codes for terminal output

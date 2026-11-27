@@ -6,7 +6,6 @@ import math
 from openai import OpenAI
 import chromadb
 import pdfplumber
-from sentence_transformers import SentenceTransformer
 from chromadb.utils import embedding_functions
 
 # ANSI color codes for terminal output
@@ -206,7 +205,6 @@ with pdfplumber.open("../data/offices.pdf") as pdf:
     for page in pdf.pages:
         pdf_text += page.extract_text() + "\n"
 
-model = SentenceTransformer('sentence-transformers/all-mpnet-base-v2')
 chroma_client = chromadb.Client()
 collection = chroma_client.get_or_create_collection(
     name="office_docs",

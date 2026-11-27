@@ -1,7 +1,7 @@
 # Implementing AI Agents in Python
 ## Using frameworks, MCP, and RAG for agentic AI
 ## Session labs 
-## Revision 1.57 - 10/27/26
+## Revision 1.58 - 11/27/26
 
 **Follow the startup instructions in the README.md file IF NOT ALREADY DONE!**
 
@@ -50,7 +50,7 @@
 - Provides a summary forecast using a TAO loop.
 
 **What it demonstrates about the framework**
-- Shows how to integrate **LangChain + Ollama** to drive LLM reasoning.
+- Uses LangChain's Ollama chat client (`ChatOllama`) to talk to the local model. The agent loop itself is written by hand so you can see every step.
 - Demonstrates **Chain of Thought** reasoning with `Thought → Action → Observation` steps.
 - Introduces simple function/tool calling using an LLM.
 
@@ -291,9 +291,9 @@ It calls `get_forecast` - a tool that did not exist the last time you ran this a
 - Stores memory in a local JSON file to persist state across sessions.
 
 **What it demonstrates about the framework**
-- Introduces the **SmolAgents CodeAgent**, a declarative and lightweight ReAct agent.
-- Demonstrates **@tool decorators**, deterministic execution, and **tool chaining**.
-- Highlights pluggable **memory support**, custom tools, and precise control over the agent loop.
+- Introduces the **smolagents CodeAgent**, a lightweight ReAct agent that writes and runs Python code as its actions.
+- Demonstrates **@tool decorators** and **tool chaining** - the code the agent writes calls one tool and feeds the result to the next.
+- Adds simple **memory** of our own: current values and past conversions are saved to a JSON file, so they survive a restart.
 
 ---
 
@@ -305,7 +305,7 @@ It calls `get_forecast` - a tool that did not exist the last time you ran this a
 echo "provider=$AGENT_PROVIDER  key=$([ -n "$GROQ_API_KEY" ] && echo set || echo MISSING)"
 ```
 
-You should see `provider=groq  key=set`. A CodeAgent re-sends the whole conversation each step, so this lab does hit the free-tier limit and pause part-way through - that's expected. (Without Groq it still runs, on the slower local `llama3.2`.)
+You should see `provider=groq  key=set`. A CodeAgent re-sends the whole conversation each step, so this lab may hit the free-tier limit and pause part-way through - that's expected if it happens. (Without Groq it still runs, on the slower local `llama3.2`.)
 
 NOTE: If you see `provider= key=set` try the command in a new terminal to make sure the provider value is set.
 
@@ -346,7 +346,7 @@ python curr_conv_agent.py
 5. Look for the model line at the top - it confirms which model is in use:
 
 ```
-[MODEL] provider=groq  model=groq/qwen/qwen3.8-27b      (if you set up Groq)
+[MODEL] provider=groq  model=groq/openai/gpt-oss-120b   (if you set up Groq)
 [MODEL] provider=ollama  model=ollama_chat/llama3.2          (local fallback)
 ```
 
@@ -702,7 +702,7 @@ python agent5.py
 ---
 
 **What the agent example does**
-- Takes a request to generate Python code (e.g., "Plot a sine wave").
+- Takes a request to generate Python code (e.g., "determine if a number is prime").
 - A **code writer agent** produces the first version.
 - The code runs in a **sandboxed subprocess**, capturing output or errors.
 - A **critic agent** judges the code against the request, using that runtime feedback.

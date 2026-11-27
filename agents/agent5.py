@@ -1,14 +1,8 @@
-import json
-import ollama
-import os
-import re
-from crewai import Crew, Task, Agent
-from langchain_openai import ChatOpenAI
+from crewai import Crew, Task, Agent, LLM
 
-os.environ["OPENAI_API_KEY"] = "testapikey"
-
-# Use a lightweight LLM model optimized for CPU
-ollama_llm = ChatOpenAI(
+# The local llama3.2 model, served by Ollama inside the codespace.
+# CrewAI's own LLM class talks to it directly - no API key needed.
+ollama_llm = LLM(
     model="ollama/llama3.2",
     base_url="http://localhost:11434"
 )

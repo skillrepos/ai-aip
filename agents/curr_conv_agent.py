@@ -91,7 +91,7 @@ class RateLimitRetryModel(LiteLLMModel):
 #   withdrawn it, the lab spots that and uses the local model too - so the lab
 #   always runs, just slower.
 
-GROQ_MODEL = "qwen/qwen3.8-27b"   # the hosted model this lab prefers
+GROQ_MODEL = "openai/gpt-oss-120b"   # a Groq PRODUCTION model - the one this lab prefers
 
 
 def groq_offers(key, model):
