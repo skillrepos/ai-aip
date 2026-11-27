@@ -96,8 +96,8 @@
         "title": "System prompt: built from discovery",
         "note": [
           "**The tool list is a `{tool_catalogue}` placeholder, filled at runtime from the server.**",
-          "- Rules stop the model feeding a tool its own output",
-          "- Doubled `{{}}` braces survive `.format()` as literal JSON"
+          "- Nothing here names a tool - discovery supplies them",
+          "- `build_system_prompt()` below does the filling"
         ],
         "lines": 4
       },

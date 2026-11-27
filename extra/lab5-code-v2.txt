@@ -7,7 +7,7 @@ ollama_llm = LLM(
     base_url="http://localhost:11434"
 )
 
-# Define the AI agents
+# Define the AI agent 
 
 booking_agent = Agent(
     role="Airline Booking Assistant",
