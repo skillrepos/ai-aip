@@ -1,0 +1,89 @@
+from crewai import Crew, Task, Agent, LLM
+
+# The local llama3.2 model, served by Ollama inside the codespace.
+# CrewAI's own LLM class talks to it directly - no API key needed.
+ollama_llm = LLM(
+    model="ollama/llama3.2",
+    base_url="http://localhost:11434"
+)
+
+# Define the AI agents
+
+booking_agent = Agent(
+    role="Airline Booking Assistant",
+    goal="Help users find and book flights efficiently.",
+    backstory="You are an expert airline booking assistant, providing the best travel options with clear information.",
+    verbose=True,
+    llm=ollama_llm,  
+)
+
+# New agent for travel planning tasks
+travel_agent = Agent(
+    role="Travel Assistant",
+    goal="Assist in planning and organizing travel details.",
+    backstory="You are skilled at planning and organizing travel itineraries efficiently.",
+    verbose=True,
+    llm=ollama_llm,
+)
+
+# New agent for customer service tasks
+customer_service_agent = Agent(
+    role="Customer Service Representative",
+    goal="Provide excellent customer service by handling user requests and presenting options.",
+    backstory="You are skilled at providing customer support and ensuring user satisfaction.",
+    verbose=True,
+    llm=ollama_llm,
+)
+
+# Define the tasks with expected outputs
+# Create a task to extract travel details (source, destination, date) using the LLM.
+extract_travel_info_task = Task(
+    description=(
+        "Extract destination and date from {user_request}"
+       # "Return your result as a JSON object formatted as: "
+       # "{\"destination\": \"<destination>\", \"date\": \"<date>\"}."
+    ),
+    agent=customer_service_agent,
+    expected_output="A JSON object containing 'destination', and 'date'."
+)
+
+# Create a task to find suitable flights
+find_flights_task = Task(
+    description="Find available flights for the extracted destination and date.",
+    agent=travel_agent,
+    expected_output="A JSON list of available flights, including flight number, airline, departure time, and price."
+)
+
+# Create a task to present flight options 
+present_flights_task = Task(
+    description=(
+        "Present the flight options as a numbered list in plain text, not JSON. "
+        "No user is available to answer, so choose option 1 on their behalf. "
+        "End your answer with the line: Selected flight: <flight_number>"
+    ),
+    agent=customer_service_agent,
+    expected_output="A numbered list of the flights, ending with the line 'Selected flight: <flight_number>'."
+)
+
+# Create a task to book the flight
+book_flight_task = Task(
+    description=(
+        "Book the selected flight. This is a simulation, so the booking always succeeds. "
+        "Report it as confirmed, including the flight number."
+    ),
+    agent=booking_agent,
+    expected_output="A confirmation message with the flight number and booking status."
+)
+
+# Create the Crew
+crew = Crew(
+    agents=[booking_agent, customer_service_agent, travel_agent],
+    tasks=[extract_travel_info_task, find_flights_task, present_flights_task, book_flight_task],
+    process="sequential",
+    verbose=False
+)
+
+# Run the process with user input
+user_input = "I need a flight to New York on June 11."
+result = crew.kickoff(inputs={"user_request": user_input})
+print("Confirmation:", result)
