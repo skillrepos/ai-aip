@@ -26,13 +26,29 @@ WEATHER_CODES = {
 
 # ── 2. Tools ───────────────────────────────────────────────────────────────
 def get_weather(lat: float, lon: float) -> dict:
-
+    """
+    Return today's forecast:
+        { "high": °C, "low": °C, "conditions": str }
+    """
+    url = (
+        "https://api.open-meteo.com/v1/forecast"
+        f"?latitude={lat}&longitude={lon}"
+        "&daily=weathercode,temperature_2m_max,temperature_2m_min"
+        "&forecast_days=1&timezone=auto"
+    )
 
     # Retry up to 3 times
     max_retries = 3
     for attempt in range(max_retries):
         try:
-
+            r = requests.get(url, timeout=15)
+            r.raise_for_status()
+            daily = r.json()["daily"]
+            return {
+                "high":       daily["temperature_2m_max"][0],
+                "low":        daily["temperature_2m_min"][0],
+                "conditions": WEATHER_CODES.get(daily["weathercode"][0], "Unknown"),
+            }
         except (requests.Timeout, requests.ConnectionError) as e:
             if attempt == max_retries - 1:
                 raise  # Re-raise on final attempt
@@ -43,10 +59,11 @@ def get_weather(lat: float, lon: float) -> dict:
 
 
 # ── 4. LLM client ───────────────────────────────────────────────────────────
-
+llm = ChatOllama(model="llama3.2", temperature=0.0)
 
 # ── 5. System prompt ────────────────────────────────────────────────────────
 SYSTEM = textwrap.dedent("""
+You are a weather agent with one tool:
 
 """).strip()
 
@@ -70,7 +87,9 @@ def run(question: str) -> str:
         if "Action:" in response and "Args:" in response:
             try:
                 # Extract action and args
- 
+                action_line = response.split("Action:")[1].split("\n")[0].strip()
+                args_text = response.split("Args:")[1].split("\n")[0].strip()
+
                 # Get the tool function
 
                 if tool_func is None:

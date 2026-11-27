@@ -2,25 +2,9 @@
   "files": {
     "extra/lab1-code.txt": [
       {
-        "anchor": "\"\"\"",
-        "title": "Build the weather request",
-        "note": "**Builds the Open-Meteo forecast URL from the lat/lon the agent extracted.** This is the tool the LLM will call to get real data."
-      },
-      {
-        "anchor": "r = requests.get(url, timeout=15)",
-        "endAnchor": "}",
-        "title": "Call the API, return the forecast",
-        "note": "**Fetches the forecast and returns a tidy dict (high, low, conditions).** That dict becomes the agent's Observation."
-      },
-      {
         "anchor": "TOOLS = {",
         "title": "Tool registry",
         "note": "**Maps tool names to functions** so the agent can look up and call whichever tool the LLM names."
-      },
-      {
-        "anchor": "llm = ChatOllama(model=\"llama3.2\", temperature=0.0)",
-        "title": "The LLM 'brain'",
-        "note": "**The local Ollama model the agent reasons with.** temperature=0 keeps its tool choices deterministic."
       },
       {
         "anchor": "\"\"\"Execute the TAO loop, letting the AI decide which tools to call.\"\"\"",
@@ -31,11 +15,6 @@
         "anchor": "# Get AI's next step",
         "title": "Ask the model what to do",
         "note": "**Each turn, send the messages to the LLM and print its Thought/Action.** The reply decides whether a tool runs next."
-      },
-      {
-        "anchor": "action_line = response.split(\"Action:\")[1].split(\"\\n\")[0].strip()",
-        "title": "Parse Action and Args",
-        "note": "**Pulls the tool name and JSON arguments out of the model's text.** How free-text becomes a concrete tool call."
       },
       {
         "anchor": "tool_name = action_line",
@@ -53,11 +32,6 @@
         "endAnchor": "messages.append({\"role\": \"user\", \"content\": f\"Observation: {observation}\"})",
         "title": "Feed the result back",
         "note": "**Adds the model's step and the tool's Observation to history** so the next loop turn has context."
-      },
-      {
-        "anchor": "You are a weather agent with one tool:",
-        "title": "System prompt: the agent's role",
-        "note": "**Opens the ReAct system prompt — tells the model it is a weather agent with one tool.** The persona that frames every turn."
       },
       {
         "anchor": "get_weather(lat:float, lon:float)",
@@ -185,20 +159,24 @@
     ],
     "extra/agentic_rag_agent.txt": [
       {
-        "anchor": "# search_documents -> RAG retrieval (the model may call it again with a better query)",
-        "endAnchor": "DISPATCH = {\"search_documents\": search_documents, \"distance_to\": distance_to, \"city_facts\": city_facts}",
-        "title": "The agent's tools",
+        "anchor": "messages = [{\"role\": \"system\", \"content\": \"Give exactly 3 short facts",
+        "lines": 3,
+        "title": "city_facts asks the model",
         "note": [
-          "**All the tools the model can call: RAG search, office→city grounding, distance, and city facts.**",
-          "- ground_office refuses to invent offices not in the docs",
-          "- distance_to grounds the office name first, then geocodes the real city"
+          "**This tool answers from the model's own knowledge, not the documents.**",
+          "- ground_office() first checks the office exists",
+          "- Kept separate so you can tell document facts from model facts"
         ]
       },
       {
-        "anchor": "# TOOLS_SCHEMA is the standard OpenAI-style tool schema. We pass it straight to the",
-        "endAnchor": "\"and list the ones that do - never invent one. Keep answers concise; finish with plain text.\")",
-        "title": "Tool schemas + system prompt",
-        "note": "**The JSON schemas that enable native tool-calling, plus the system rules** (search first, answer only what was asked, never invent or substitute an office)."
+        "anchor": "\"You answer questions about company offices using ONLY the office",
+        "endAnchor": "\"and list the ones that do - n",
+        "title": "System prompt",
+        "note": [
+          "**Tells the model to answer only from the documents and its tools.**",
+          "- Includes the rule that stops it swapping in a similar office name (step 6)",
+          "- TOOLS_SCHEMA just above is what turns on native tool-calling"
+        ]
       },
       {
         "anchor": "if not (answer or \"\").strip():",
@@ -207,10 +185,23 @@
         "note": "**Rejects answers that are empty or ungrounded (no docs retrieved).** Forces the agent to retrieve before it can answer."
       },
       {
-        "anchor": "state = {\"start\": start, \"retrieved\": []}",
-        "endAnchor": "print(\"[AGENT] reached max steps without a final answer.\")",
-        "title": "The model-driven loop",
-        "note": "**The core loop: the model either calls tools (run them, feed results back) or gives a final answer that gets self-checked.** The model — not the code — drives each step."
+        "anchor": "for step in range(1, max_steps + 1):",
+        "lines": 4,
+        "title": "The step loop",
+        "note": [
+          "**Each step asks the model what to do next, up to max_steps.**",
+          "- The model replies with tool calls or a final answer"
+        ]
+      },
+      {
+        "anchor": "for tc in message.tool_calls:",
+        "lines": 9,
+        "title": "Run the tools the model chose",
+        "note": [
+          "**Runs each tool the model picked and feeds the result back.**",
+          "- DISPATCH maps the tool name to its Python function",
+          "- These are the [AGENT decision] and [observation] lines you see"
+        ]
       }
     ],
     "extra/lab5-code.txt": [

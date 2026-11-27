@@ -2,6 +2,9 @@
 """
 Lab 4 - Agentic RAG (model-driven, via native tool-calling)
 
+The MODEL drives the loop: using native tool-calling it decides which tools to
+call, retrieves as needed, grounds office names to real cities, and a self-check
+gate verifies the answer is grounded before finishing.
 
 You build this file with the diff/merge step. FOUR sections are merged in, each
 marked with a ">>>>> MERGE SECTION N" banner:
@@ -66,7 +69,11 @@ def haversine_miles(lat1, lon1, lat2, lon2):
     return R * 2 * math.atan2(math.sqrt(h), math.sqrt(1 - h))
 
 
-
+# >>>>> MERGE SECTION 1: tools the agent can call (+ grounding helper) >>>>>
+# search_documents -> RAG retrieval (the model may call it again with a better query)
+# ground_office    -> resolve an office name to its real city from the docs
+#                     (e.g. "HQ" -> "New York"), or report not_found - never invents one
+# distance_to / city_facts -> live tools.  DISPATCH maps a tool name to its function.
 def search_documents(args, state):
     query = args.get("query", "")
     snippets = collection.query(query_texts=[query], n_results=3)["documents"][0]
@@ -78,6 +85,8 @@ def search_documents(args, state):
 
 
 def ground_office(place, state):
+    """Match an office name to a retrieved doc line and return its real city,
+    or not_found - so the agent can't invent an office that isn't in the data."""
     snippets = collection.query(query_texts=[place], n_results=3)["documents"][0]
     for s in snippets:
         if s not in state["retrieved"]:
@@ -86,7 +95,8 @@ def ground_office(place, state):
     words = [w for w in re.findall(r"[a-z]+", place.lower()) if w not in skip and len(w) >= 2]
     for s in snippets:
         if any(w in s.lower() for w in words) and "," in s:
-            office, city = s.split(",")[0].strip(), s.split(",")[1].strip()
+            address = s.split(" | ")[0]          # "Office street, City, ..." before the labels
+            office, city = address.split(",")[0].strip(), address.split(",")[1].strip()
             print(f"    [GROUND] {place!r} -> {office!r} in {city!r}")
             return {"status": "ok", "office": office, "city": city}
     available = [s.split(",")[0].strip() for s in snippets if "," in s]
@@ -118,6 +128,9 @@ DISPATCH = {"search_documents": search_documents, "distance_to": distance_to, "c
 # >>>>> END MERGE SECTION 1 >>>>>
 
 
+# >>>>> MERGE SECTION 2: tool schemas (enable native tool-calling) + system prompt >>>>>
+# TOOLS_SCHEMA is the standard OpenAI-style tool schema. We pass it straight to the
+# model with tools=... and read the calls the model chose back from message.tool_calls.
 TOOLS_SCHEMA = [
     {"type": "function", "function": {"name": "search_documents",
         "description": "Retrieve office-document snippets. Call first; call again with a better query if needed.",
@@ -135,13 +148,17 @@ SYSTEM = (
 
 
 # >>>>> MERGE SECTION 3: self-check gate >>>>>
+# Deterministic check: accept a non-empty answer that is grounded (documents were
+# retrieved). It does NOT require listing every office - a focused question gets a
+# focused answer - so it never forces needless extra retrieval.
 def validate_answer(answer, state):
     return {"complete": True, "missing": ""}
 # >>>>> END MERGE SECTION 3 >>>>>
 
 
 # >>>>> MERGE SECTION 4: the agent loop (the MODEL drives it) >>>>>
-# TODO (merge): run_agent - the model decides each step (call tools, or final answer)
+# Each step the model either (a) calls tools - we run them and feed the results
+# back - or (b) gives a final answer, which we run through the self-check.
 def run_agent(user_query, start, max_steps=8):
     state = {"start": start, "retrieved": []}
     messages = [{"role": "system", "content": SYSTEM},
@@ -199,6 +216,12 @@ collection = chromadb.Client().get_or_create_collection(
     name="office_docs_agentic",
     embedding_function=embedding_functions.SentenceTransformerEmbeddingFunction(model_name="all-MiniLM-L6-v2"))
 docs = [line.strip() for line in text.split("\n") if len(line.strip()) > 20]
+# The PDF's column headings are only on its first line, so a row such as
+# "HQ 123 Main St, New York, NY 200 15M ..." doesn't say which number is staff and
+# which is revenue. Label them, keeping "office, city, ..." at the front for ground_office().
+ROW = re.compile(r"^(?P<place>.+?) (?P<staff>\d+) (?P<revenue>\d+(?:\.\d+)?M) (?P<services>.+)$")
+docs = [f"{m['place']} | Employees: {m['staff']} | Revenue: ${m['revenue']} | Services: {m['services']}"
+        if (m := ROW.match(d)) else d for d in docs]
 collection.add(documents=docs, ids=[f"doc_{i}" for i in range(len(docs))])
 print(f"Indexed {len(docs)} office lines.\n")
 

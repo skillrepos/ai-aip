@@ -95,7 +95,8 @@ def ground_office(place, state):
     words = [w for w in re.findall(r"[a-z]+", place.lower()) if w not in skip and len(w) >= 2]
     for s in snippets:
         if any(w in s.lower() for w in words) and "," in s:
-            office, city = s.split(",")[0].strip(), s.split(",")[1].strip()
+            address = s.split(" | ")[0]          # "Office street, City, ..." before the labels
+            office, city = address.split(",")[0].strip(), address.split(",")[1].strip()
             print(f"    [GROUND] {place!r} -> {office!r} in {city!r}")
             return {"status": "ok", "office": office, "city": city}
     available = [s.split(",")[0].strip() for s in snippets if "," in s]
@@ -244,6 +245,12 @@ collection = chromadb.Client().get_or_create_collection(
     name="office_docs_agentic",
     embedding_function=embedding_functions.SentenceTransformerEmbeddingFunction(model_name="all-MiniLM-L6-v2"))
 docs = [line.strip() for line in text.split("\n") if len(line.strip()) > 20]
+# The PDF's column headings are only on its first line, so a row such as
+# "HQ 123 Main St, New York, NY 200 15M ..." doesn't say which number is staff and
+# which is revenue. Label them, keeping "office, city, ..." at the front for ground_office().
+ROW = re.compile(r"^(?P<place>.+?) (?P<staff>\d+) (?P<revenue>\d+(?:\.\d+)?M) (?P<services>.+)$")
+docs = [f"{m['place']} | Employees: {m['staff']} | Revenue: ${m['revenue']} | Services: {m['services']}"
+        if (m := ROW.match(d)) else d for d in docs]
 collection.add(documents=docs, ids=[f"doc_{i}" for i in range(len(docs))])
 print(f"Indexed {len(docs)} office lines.\n")
 

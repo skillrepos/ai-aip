@@ -1,7 +1,7 @@
 # Implementing AI Agents in Python
 ## Using frameworks, MCP, and RAG for agentic AI
 ## Session labs 
-## Revision 1.60 - 11/27/26
+## Revision 1.61 - 11/27/26
 
 **Follow the startup instructions in the README.md file IF NOT ALREADY DONE!**
 
@@ -456,11 +456,11 @@ Close the tab when done.
 code -d ../extra/agentic_rag_agent.txt agentic_rag_agent.py
 ```
 
-Merge the **four sections** in turn - each carries a `>>>>> MERGE SECTION N` banner explaining what it adds:
-   - **1 - Tools:** `search_documents`, the `ground_office` grounding check, `distance_to`, `city_facts`, and `DISPATCH`.
-   - **2 - Tool schemas + system prompt:** the JSON `TOOLS_SCHEMA` that *enables* native tool-calling, plus the `SYSTEM` instructions.
-   - **3 - Self-check gate:** `validate_answer`.
-   - **4 - The agent loop:** `run_agent`, where the model decides each step.
+Most of the file is already filled in. There are **five** pieces to merge, inside four `>>>>> MERGE SECTION N` banners (read each banner for what its section does):
+   - **1 - Tools:** the model call inside `city_facts` - the one tool that answers from the model's own knowledge.
+   - **2 - System prompt:** the `SYSTEM` instructions. (The `TOOLS_SCHEMA` above it is what *enables* native tool-calling.)
+   - **3 - Self-check gate:** the body of `validate_answer`.
+   - **4 - The agent loop:** two pieces in `run_agent` - the step loop, and the code that runs each tool the model chose.
 
    Close the tab to save.
 

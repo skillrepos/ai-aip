@@ -28,8 +28,6 @@ Click here ➡️  [![Open in GitHub Codespaces](https://github.com/codespaces/b
 
 This will run for several minutes while it gets everything ready.
 
-If VS Code shows a workspace trust prompt, click *Trust Folder & Continue*.
-
 The codespace may open in Restricted Mode with a banner asking whether you trust the authors
 of the files. Click **Trust Folder & Continue**. 
 
