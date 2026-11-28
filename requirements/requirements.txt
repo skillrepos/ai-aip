@@ -1,3 +1,9 @@
+# Codespaces have no GPU, so install the CPU-only build of PyTorch (pulled in by
+# sentence-transformers). The default build drags in ~5 GB of NVIDIA GPU libraries
+# and makes setup about 10 minutes slower.
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.15.0+cpu; sys_platform == "linux"    # Codespaces / Linux
+torch==2.15.0; sys_platform != "linux"        # Mac and Windows: the normal build has no GPU extras
 # ── LangChain & Ollama integration (Labs 1-2 use ChatOllama) ─────────────
 langchain-ollama==0.3.3
 
